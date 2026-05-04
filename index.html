@@ -37,6 +37,52 @@
             color: #fff;
         }
 
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            gap: 2vh;
+        }
+
+        /* ========== 励志语区域 ========== */
+        .quote-container {
+            position: relative;
+            width: 80vw;
+            max-width: 700px;
+            height: 3em;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .quote-text {
+            position: absolute;
+            width: 100%;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            font-family: 'Space Mono', sans-serif;
+            font-size: clamp(14px, 2vw, 20px);
+            letter-spacing: 0.08em;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.75);
+            opacity: 0;
+            transition: opacity 1.2s ease, transform 1.2s ease;
+            transform: translateY(-50%) translateY(10px);
+        }
+
+        .quote-text.active {
+            opacity: 1;
+            transform: translateY(-50%) translateY(0);
+        }
+
+        .quote-text.fade-out {
+            opacity: 0;
+            transform: translateY(-50%) translateY(-10px);
+        }
+
+        /* ========== 时钟区域 ========== */
         .clock {
             font-family: 'Space Mono', sans-serif;
             font-size: 8vw;
@@ -60,6 +106,47 @@
         .clock-colon {
             display: inline;
             padding: 0 0.05em;
+        }
+
+        /* ========== 考试倒计时区域 ========== */
+        .countdown-container {
+            text-align: center;
+            margin-top: 1vh;
+        }
+
+        .countdown-label {
+            font-family: 'Space Mono', sans-serif;
+            font-size: clamp(11px, 1.4vw, 15px);
+            letter-spacing: 0.15em;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 0.5em;
+        }
+
+        .countdown-timer {
+            font-family: 'Space Mono', sans-serif;
+            font-size: clamp(16px, 2.5vw, 28px);
+            letter-spacing: 0.06em;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .countdown-timer .countdown-unit {
+            display: inline-block;
+            min-width: 2.2em;
+            text-align: center;
+        }
+
+        .countdown-timer .countdown-separator {
+            display: inline-block;
+            width: 0.6em;
+            text-align: center;
+            opacity: 0.5;
+        }
+
+        .countdown-timer .countdown-tag {
+            font-size: 0.55em;
+            opacity: 0.5;
+            vertical-align: baseline;
+            margin-left: 0.1em;
         }
 
         .bottom-controls {
@@ -125,6 +212,19 @@
 
         /* ========== 移动端适配 ========== */
         @media screen and (max-width: 768px) {
+            .main-container {
+                gap: 3vh;
+            }
+
+            .quote-container {
+                width: 90vw;
+                height: 3.5em;
+            }
+
+            .quote-text {
+                font-size: clamp(13px, 3.8vw, 18px);
+            }
+
             .clock {
                 font-size: 22vw;
                 letter-spacing: 0.05em;
@@ -139,6 +239,14 @@
 
             .clock-colon {
                 display: none;
+            }
+
+            .countdown-label {
+                font-size: clamp(10px, 2.8vw, 14px);
+            }
+
+            .countdown-timer {
+                font-size: clamp(14px, 4.5vw, 24px);
             }
 
             .mode-toggle {
@@ -192,10 +300,28 @@
         </div>
         <button class="mode-toggle" id="modeToggle">切换模式</button>
     </div>
-    <div class="clock" id="clock">
-        <div class="clock-row" id="clockHours">00</div>
-        <span class="clock-colon">:</span>
-        <div class="clock-row" id="clockMinutes">00</div>
+    <div class="main-container">
+        <div class="quote-container" id="quoteContainer">
+            <div class="quote-text active" id="quoteText1"></div>
+            <div class="quote-text" id="quoteText2"></div>
+        </div>
+        <div class="clock" id="clock">
+            <div class="clock-row" id="clockHours">00</div>
+            <span class="clock-colon">:</span>
+            <div class="clock-row" id="clockMinutes">00</div>
+        </div>
+        <div class="countdown-container" id="countdownContainer">
+            <div class="countdown-label">距离考试</div>
+            <div class="countdown-timer" id="countdownTimer">
+                <span class="countdown-unit" id="cdDays">00</span><span class="countdown-tag">天</span>
+                <span class="countdown-separator">:</span>
+                <span class="countdown-unit" id="cdHours">00</span><span class="countdown-tag">时</span>
+                <span class="countdown-separator">:</span>
+                <span class="countdown-unit" id="cdMinutes">00</span><span class="countdown-tag">分</span>
+                <span class="countdown-separator">:</span>
+                <span class="countdown-unit" id="cdSeconds">00</span><span class="countdown-tag">秒</span>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -207,15 +333,105 @@
         const modeToggle = document.getElementById('modeToggle');
         const body = document.body;
 
-        // 调试模式开关
         let debugMode = false;
         let clockInterval = null;
         let calibrationId = null;
 
-        // 模式: 'minimal' | 'default'
         let currentMode = 'default';
 
-        // 一天中的关键时间点（小时）及其对应的渐变配置
+        // ========== 励志语数据 ==========
+        const quotes = [
+            "星光不问赶路人，时光不负有心人",
+            "每一个不曾起舞的日子，都是对生命的辜负",
+            "你现在的努力，是未来的底气",
+            "把每一天当作最后一天来过，终有一天你会如愿以偿",
+            "不是因为看到希望才坚持，而是坚持了才看到希望",
+            "所有的努力都不会被辜负，只要坚持到底",
+            "成功不是终点，失败也不是终结，唯有继续前行",
+            "你比想象中更强大，比认知中更勇敢",
+            "今天的汗水，是明天微笑的种子",
+            "与其等待机会，不如创造机会",
+            "没有等出来的辉煌，只有走出来的美丽",
+            "越努力，越幸运；越坚持，越优秀"
+        ];
+
+        let currentQuoteIndex = 0;
+        let activeQuoteSlot = 1;
+        let quoteInterval = null;
+        const QUOTE_SWITCH_INTERVAL = 20 * 60 * 1000;
+
+        const quoteText1 = document.getElementById('quoteText1');
+        const quoteText2 = document.getElementById('quoteText2');
+
+        function initQuote() {
+            currentQuoteIndex = Math.floor(Math.random() * quotes.length);
+            quoteText1.textContent = quotes[currentQuoteIndex];
+            quoteText1.classList.add('active');
+            activeQuoteSlot = 1;
+        }
+
+        function switchQuote() {
+            currentQuoteIndex = (currentQuoteIndex + 1) % quotes.length;
+            const nextText = quotes[currentQuoteIndex];
+
+            if (activeQuoteSlot === 1) {
+                quoteText1.classList.remove('active');
+                quoteText1.classList.add('fade-out');
+                quoteText2.textContent = nextText;
+                quoteText2.classList.add('active');
+                setTimeout(() => {
+                    quoteText1.classList.remove('fade-out');
+                }, 1200);
+                activeQuoteSlot = 2;
+            } else {
+                quoteText2.classList.remove('active');
+                quoteText2.classList.add('fade-out');
+                quoteText1.textContent = nextText;
+                quoteText1.classList.add('active');
+                setTimeout(() => {
+                    quoteText2.classList.remove('fade-out');
+                }, 1200);
+                activeQuoteSlot = 1;
+            }
+        }
+
+        function startQuoteRotation() {
+            if (quoteInterval) clearInterval(quoteInterval);
+            quoteInterval = setInterval(switchQuote, QUOTE_SWITCH_INTERVAL);
+        }
+
+        // ========== 考试倒计时 ==========
+        const EXAM_DATE = new Date('2026-07-06T00:00:00+08:00');
+        const cdDays = document.getElementById('cdDays');
+        const cdHours = document.getElementById('cdHours');
+        const cdMinutes = document.getElementById('cdMinutes');
+        const cdSeconds = document.getElementById('cdSeconds');
+        const countdownContainer = document.getElementById('countdownContainer');
+
+        function updateCountdown() {
+            const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Shanghai' }));
+            const diff = EXAM_DATE - now;
+
+            if (diff <= 0) {
+                cdDays.textContent = '00';
+                cdHours.textContent = '00';
+                cdMinutes.textContent = '00';
+                cdSeconds.textContent = '00';
+                return;
+            }
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            cdDays.textContent = String(days).padStart(2, '0');
+            cdHours.textContent = String(hours).padStart(2, '0');
+            cdMinutes.textContent = String(minutes).padStart(2, '0');
+            cdSeconds.textContent = String(seconds).padStart(2, '0');
+        }
+
+        // ========== 渐变背景配置 ==========
         const timeStops = [
             {
                 hour: 0,
@@ -343,7 +559,6 @@
             }
         ];
 
-        // 缓动曲线函数
         function easeInOutCubic(t) {
             return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
         }
@@ -425,7 +640,6 @@
             return interpolatedStops;
         }
 
-        // 检测是否为移动设备
         function isMobile() {
             return window.innerWidth <= 768;
         }
@@ -434,7 +648,6 @@
             const compressedStops = stops.map(s =>
                 `rgb(${s.color[0]}, ${s.color[1]}, ${s.color[2]}) ${(s.pos * 0.8).toFixed(2)}%`
             ).join(', ');
-            // 移动端圆心位于窗口上方可见区域，桌面端保持原位置
             const centerY = isMobile() ? '-20%' : '-60%';
             return `radial-gradient(circle 180vmax at 50% ${centerY}, ${compressedStops})`;
         }
@@ -498,8 +711,12 @@
 
         function startClock() {
             stopClock();
-            clockInterval = setInterval(updateClock, 1000);
+            clockInterval = setInterval(() => {
+                updateClock();
+                updateCountdown();
+            }, 1000);
             updateClock();
+            updateCountdown();
         }
 
         function stopClock() {
@@ -589,6 +806,8 @@
             }
         });
 
+        initQuote();
+        startQuoteRotation();
         startClock();
     </script>
 </body>
