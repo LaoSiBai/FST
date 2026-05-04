@@ -51,17 +51,13 @@
             position: relative;
             width: 80vw;
             max-width: 700px;
-            height: 3em;
-            overflow: hidden;
+            min-height: 2.5em;
             text-align: center;
         }
 
         .quote-text {
-            position: absolute;
+            position: relative;
             width: 100%;
-            top: 50%;
-            left: 0;
-            transform: translateY(-50%);
             font-family: 'Space Mono', sans-serif;
             font-size: clamp(20px, 3.5vw, 36px);
             letter-spacing: 0.08em;
@@ -69,17 +65,17 @@
             color: rgba(255, 255, 255, 0.75);
             opacity: 0;
             transition: opacity 1.2s ease, transform 1.2s ease;
-            transform: translateY(-50%) translateY(10px);
+            transform: translateY(10px);
         }
 
         .quote-text.active {
             opacity: 1;
-            transform: translateY(-50%) translateY(0);
+            transform: translateY(0);
         }
 
         .quote-text.fade-out {
             opacity: 0;
-            transform: translateY(-50%) translateY(-10px);
+            transform: translateY(-10px);
         }
 
         /* ========== 时钟区域 ========== */
@@ -108,26 +104,34 @@
             padding: 0 0.05em;
         }
 
+        /* ========== 时钟+倒计时行 ========== */
+        .clock-row-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2vw;
+        }
+
         /* ========== 考试倒计时区域 ========== */
         .countdown-container {
-            position: fixed;
-            right: 32px;
-            bottom: 32px;
-            text-align: right;
-            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            text-align: left;
         }
 
         .countdown-label {
             font-family: 'Space Mono', sans-serif;
-            font-size: clamp(11px, 1.2vw, 16px);
+            font-size: clamp(10px, 1vw, 14px);
             letter-spacing: 0.15em;
             color: rgba(255, 255, 255, 0.5);
-            margin-bottom: 0.3em;
+            margin-bottom: 0.2em;
         }
 
         .countdown-timer {
             font-family: 'Space Mono', sans-serif;
-            font-size: clamp(28px, 5vw, 56px);
+            font-size: clamp(22px, 3.5vw, 42px);
             letter-spacing: 0.06em;
             color: rgba(255, 255, 255, 0.9);
             line-height: 1;
@@ -135,7 +139,7 @@
 
         .countdown-timer .countdown-unit {
             display: inline-block;
-            min-width: 1.8em;
+            min-width: 1.6em;
             text-align: center;
         }
 
@@ -143,7 +147,7 @@
             font-size: 0.5em;
             opacity: 0.5;
             vertical-align: baseline;
-            margin-left: 0.15em;
+            margin-left: 0.1em;
         }
 
         .bottom-controls {
@@ -215,11 +219,19 @@
 
             .quote-container {
                 width: 90vw;
-                height: 3.5em;
+                min-height: 2.5em;
             }
 
             .quote-text {
                 font-size: clamp(16px, 5vw, 28px);
+            }
+
+            .clock-row-wrapper {
+                gap: 3vw;
+            }
+
+            .countdown-timer {
+                font-size: clamp(18px, 5vw, 32px);
             }
 
             .clock {
@@ -238,17 +250,8 @@
                 display: none;
             }
 
-            .countdown-container {
-                right: 16px;
-                bottom: 16px;
-            }
-
             .countdown-label {
-                font-size: clamp(10px, 2.8vw, 14px);
-            }
-
-            .countdown-timer {
-                font-size: clamp(22px, 7vw, 42px);
+                font-size: clamp(9px, 2.2vw, 12px);
             }
 
             .mode-toggle {
@@ -307,15 +310,17 @@
             <div class="quote-text active" id="quoteText1"></div>
             <div class="quote-text" id="quoteText2"></div>
         </div>
-        <div class="clock" id="clock">
-            <div class="clock-row" id="clockHours">00</div>
-            <span class="clock-colon">:</span>
-            <div class="clock-row" id="clockMinutes">00</div>
-        </div>
-        <div class="countdown-container" id="countdownContainer">
-            <div class="countdown-label">考试倒计时</div>
-            <div class="countdown-timer" id="countdownTimer">
-                <span class="countdown-unit" id="cdDays">00</span><span class="countdown-tag">天</span>
+        <div class="clock-row-wrapper">
+            <div class="clock" id="clock">
+                <div class="clock-row" id="clockHours">00</div>
+                <span class="clock-colon">:</span>
+                <div class="clock-row" id="clockMinutes">00</div>
+            </div>
+            <div class="countdown-container" id="countdownContainer">
+                <div class="countdown-label">考试倒计时</div>
+                <div class="countdown-timer" id="countdownTimer">
+                    <span class="countdown-unit" id="cdDays">00</span><span class="countdown-tag">天</span>
+                </div>
             </div>
         </div>
     </div>
