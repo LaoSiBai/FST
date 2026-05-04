@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全屏时钟</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: #000;
+            overflow: hidden;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .clock {
+            font-family: 'Space Mono', monospace;
+            font-size: 8vw;
+            font-weight: 400;
+            color: #fff;
+            letter-spacing: 0.05em;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        /* 调试面板 - 发布时可删除 */
+        .debug-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            backdrop-filter: blur(4px);
+            z-index: 100;
+        }
+
+        .debug-panel label {
+            color: rgba(255, 255, 255, 0.7);
+            font-family: 'Space Mono', monospace;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .debug-panel input[type="range"] {
+            width: 200px;
+            cursor: pointer;
+        }
+
+        .debug-panel .time-display {
+            color: #fff;
+            font-family: 'Space Mono', monospace;
+            font-size: 14px;
+            min-width: 50px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="clock" id="clock">00:00</div>
+
+    <!-- 调试面板 - 发布时可删除此区块 -->
+    <div class="debug-panel" id="debugPanel">
+        <label for="timeSlider">调试时间</label>
+        <input type="range" id="timeSlider" min="0" max="1439" value="0">
+        <span class="time-display" id="debugTime">00:00</span>
+    </div>
+
+    <script>
+        const clockEl = document.getElementById('clock');
+        const timeSlider = document.getElementById('timeSlider');
+        const debugTimeEl = document.getElementById('debugTime');
+
+        // 调试模式开关
+        const DEBUG = true;
+
+        function formatTime(date) {
+            const h = String(date.getHours()).padStart(2, '0');
+            const m = String(date.getMinutes()).padStart(2, '0');
+            return `${h}:${m}`;
+        }
+
+        function updateClock() {
+            let now;
+            if (DEBUG && timeSlider) {
+                // 调试模式：使用滑杆值（分钟数）
+                const totalMinutes = parseInt(timeSlider.value, 10);
+                const h = Math.floor(totalMinutes / 60);
+                const m = totalMinutes % 60;
+                now = new Date();
+                now.setHours(h, m, 0, 0);
+                debugTimeEl.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+            } else {
+                now = new Date();
+            }
+            clockEl.textContent = formatTime(now);
+        }
+
+        // 初始化滑杆为当前时间
+        if (DEBUG && timeSlider) {
+            const now = new Date();
+            const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
+            timeSlider.value = currentTotalMinutes;
+        }
+
+        // 每秒更新
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // 滑杆拖动时实时更新
+        if (DEBUG && timeSlider) {
+            timeSlider.addEventListener('input', updateClock);
+        }
+
+        // 按 F12 或 D 键切换调试面板
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'd' || e.key === 'D') {
+                const panel = document.getElementById('debugPanel');
+                if (panel) {
+                    panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
