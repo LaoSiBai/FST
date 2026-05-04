@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>全屏时钟</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -207,7 +207,9 @@
         const body = document.body;
 
         // 调试模式开关
-        const DEBUG = true;
+        let debugMode = false;
+        let clockInterval = null;
+        let calibrationId = null;
 
         // 模式: 'minimal' | 'default'
         let currentMode = 'default';
@@ -376,6 +378,15 @@
             easeInCubic
         };
 
+        function getShanghaiNow() {
+            return new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Shanghai' }));
+        }
+
+        function getShanghaiTotalMinutesPrecise() {
+            const now = getShanghaiNow();
+            return now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60 + now.getMilliseconds() / 60000;
+        }
+
         function getGradientConfig(totalMinutes) {
             const hour = totalMinutes / 60;
 
@@ -459,28 +470,81 @@
             }
         }
 
-        function updateClock() {
-            let now;
+        function updateClock(totalMinutesOverride) {
             let totalMinutes;
-            if (DEBUG && timeSlider) {
+            let displayH, displayM;
+
+            if (totalMinutesOverride !== undefined) {
+                totalMinutes = ((Math.floor(totalMinutesOverride) % 1440) + 1440) % 1440;
+                displayH = Math.floor(totalMinutes / 60) % 24;
+                displayM = totalMinutes % 60;
+            } else if (debugMode) {
                 totalMinutes = parseInt(timeSlider.value, 10);
-                const h = Math.floor(totalMinutes / 60);
-                const m = totalMinutes % 60;
-                now = new Date();
-                now.setHours(h, m, 0, 0);
-                debugTimeEl.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                displayH = Math.floor(totalMinutes / 60);
+                displayM = totalMinutes % 60;
+                debugTimeEl.textContent = `${String(displayH).padStart(2, '0')}:${String(displayM).padStart(2, '0')}`;
             } else {
-                now = new Date();
+                const now = getShanghaiNow();
                 totalMinutes = now.getHours() * 60 + now.getMinutes();
+                displayH = now.getHours();
+                displayM = now.getMinutes();
             }
-            const h = String(now.getHours()).padStart(2, '0');
-            const m = String(now.getMinutes()).padStart(2, '0');
-            clockHours.textContent = h;
-            clockMinutes.textContent = m;
-            updateBackground(totalMinutes);
+
+            clockHours.textContent = String(displayH).padStart(2, '0');
+            clockMinutes.textContent = String(displayM).padStart(2, '0');
+            updateBackground(((Math.floor(totalMinutes) % 1440) + 1440) % 1440);
         }
 
-        // 模式切换
+        function startClock() {
+            stopClock();
+            clockInterval = setInterval(updateClock, 1000);
+            updateClock();
+        }
+
+        function stopClock() {
+            if (clockInterval) {
+                clearInterval(clockInterval);
+                clockInterval = null;
+            }
+            if (calibrationId) {
+                cancelAnimationFrame(calibrationId);
+                calibrationId = null;
+            }
+        }
+
+        function startCalibration(fromMinutes) {
+            const targetMinutes = getShanghaiTotalMinutesPrecise();
+            const diff = targetMinutes - fromMinutes;
+
+            if (Math.abs(diff) < 1) {
+                startClock();
+                return;
+            }
+
+            const startMinutes = fromMinutes;
+            const startTime = performance.now();
+            const duration = 1500;
+
+            function animate(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easedProgress = easeOutCubic(progress);
+                const currentTarget = getShanghaiTotalMinutesPrecise();
+                const currentDiff = currentTarget - startMinutes;
+                const currentMinutes = startMinutes + currentDiff * easedProgress;
+                updateClock(currentMinutes);
+
+                if (progress < 1) {
+                    calibrationId = requestAnimationFrame(animate);
+                } else {
+                    calibrationId = null;
+                    startClock();
+                }
+            }
+
+            calibrationId = requestAnimationFrame(animate);
+        }
+
         modeToggle.addEventListener('click', () => {
             currentMode = currentMode === 'minimal' ? 'default' : 'minimal';
             body.className = currentMode;
@@ -491,50 +555,40 @@
                 clockEl.style.opacity = '1';
                 clockEl.style.backgroundImage = '';
             } else {
-                const now = new Date();
-                const totalMinutes = DEBUG && timeSlider
-                    ? parseInt(timeSlider.value, 10)
-                    : now.getHours() * 60 + now.getMinutes();
-                updateBackground(totalMinutes);
+                updateClock();
             }
         });
 
-        // 窗口大小变化时重新计算背景（用于移动端/桌面端切换）
         window.addEventListener('resize', () => {
             if (currentMode === 'default') {
-                const now = new Date();
-                const totalMinutes = DEBUG && timeSlider
-                    ? parseInt(timeSlider.value, 10)
-                    : now.getHours() * 60 + now.getMinutes();
-                updateBackground(totalMinutes);
+                updateClock();
             }
         });
 
-        // 初始化滑杆为当前时间
-        if (DEBUG && timeSlider) {
-            const now = new Date();
-            const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
-            timeSlider.value = currentTotalMinutes;
-        }
+        timeSlider.addEventListener('input', () => {
+            if (debugMode) updateClock();
+        });
 
-        // 每秒更新
-        setInterval(updateClock, 1000);
-        updateClock();
-
-        // 滑杆拖动时实时更新
-        if (DEBUG && timeSlider) {
-            timeSlider.addEventListener('input', updateClock);
-        }
-
-        // 按 D 键切换调试面板
         document.addEventListener('keydown', (e) => {
             if (e.key === 'd' || e.key === 'D') {
                 const panel = document.getElementById('debugPanel');
-                if (panel) {
-                    panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+                if (!debugMode) {
+                    debugMode = true;
+                    stopClock();
+                    panel.style.display = 'flex';
+                    const now = getShanghaiNow();
+                    timeSlider.value = now.getHours() * 60 + now.getMinutes();
+                    updateClock();
+                } else {
+                    debugMode = false;
+                    panel.style.display = 'none';
+                    const fromMinutes = parseInt(timeSlider.value, 10);
+                    startCalibration(fromMinutes);
                 }
             }
         });
+
+        startClock();
     </script>
 </body>
 </html>
