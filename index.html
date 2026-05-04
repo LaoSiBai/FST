@@ -51,17 +51,16 @@
             position: relative;
             width: 80vw;
             max-width: 700px;
-            height: 4em;
-            overflow: hidden;
             text-align: center;
+            min-height: 2.8em;
+            transition: height 0.5s ease;
         }
 
         .quote-text {
             position: absolute;
             width: 100%;
-            top: 50%;
             left: 0;
-            transform: translateY(-50%) translateY(10px);
+            top: 0;
             font-family: 'Space Mono', sans-serif;
             font-size: clamp(20px, 3.5vw, 36px);
             letter-spacing: 0.08em;
@@ -69,17 +68,55 @@
             color: rgba(255, 255, 255, 0.75);
             opacity: 0;
             transition: opacity 1.2s ease, transform 1.2s ease;
-            white-space: nowrap;
+            white-space: normal;
+            word-break: break-word;
+            transform: translateY(10px);
         }
 
         .quote-text.active {
             opacity: 1;
-            transform: translateY(-50%) translateY(0);
+            transform: translateY(0);
         }
 
         .quote-text.fade-out {
             opacity: 0;
-            transform: translateY(-50%) translateY(-10px);
+            transform: translateY(-10px);
+        }
+
+        .quote-text.collapsed {
+            max-height: 2.8em;
+            overflow: hidden;
+        }
+
+        .quote-expand-btn {
+            position: absolute;
+            bottom: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.35);
+            font-family: 'Space Mono', sans-serif;
+            font-size: 11px;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            padding: 2px 14px;
+            opacity: 0;
+            transition: opacity 0.3s ease, color 0.3s ease, background 0.3s ease;
+            pointer-events: none;
+            z-index: 10;
+            white-space: nowrap;
+        }
+
+        .quote-expand-btn.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .quote-expand-btn:hover {
+            color: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.15);
         }
 
         /* ========== 时钟区域 ========== */
@@ -223,12 +260,10 @@
 
             .quote-container {
                 width: 90vw;
-                height: 4em;
             }
 
             .quote-text {
                 font-size: clamp(16px, 5vw, 28px);
-                white-space: nowrap;
             }
 
             .clock-row-wrapper {
@@ -314,6 +349,7 @@
         <div class="quote-container" id="quoteContainer">
             <div class="quote-text active" id="quoteText1"></div>
             <div class="quote-text" id="quoteText2"></div>
+            <button class="quote-expand-btn" id="quoteExpandBtn">展开</button>
         </div>
         <div class="clock-row-wrapper">
             <div class="clock" id="clock">
@@ -347,82 +383,223 @@
 
         // ========== 励志语数据 ==========
         const quotes = [
-            "种一棵树最好的时间是十年前，其次是现在",
+            "种一棵树最好的时间是十年前，其次就是现在",
             "觉得晚了的时候，恰恰是最早的时候",
-            "直面恐惧才能战胜恐惧。这次暴露的问题，都是高三提分的宝藏",
-            "人生最痛苦的不是失败，而是'我本可以'",
+            "直面恐惧才能战胜恐惧，这次暴露的问题都是高三提分的宝藏",
+            "人生最痛苦的不是失败，而是我本可以",
             "乾坤未定，你我皆是黑马",
             "想，全是问题；做，才有答案",
             "你的对手只有你自己",
             "半山腰太挤了，我们山顶见",
             "同是寒窗苦读，怎愿甘拜下风？",
             "你要悄悄拔尖，然后惊艳所有人",
-            "考好了是强心剂，考砸了是清醒剂，怎么算都不亏",
-            "谁能在浮躁中沉下去，谁就赢了",
-            "现在偷的懒，都是以后要吃的苦",
-            "熬过无人问津的日子，才有诗和远方",
-            "愿你在合上笔盖的那一刻，有着战士收刀入鞘的骄傲",
+            "考好了是强心剂，考砸了是清醒剂，怎么都不亏",
+            "谁能在浮躁中沉下去，谁就是赢家",
+            "现在偷的懒，将来都要加倍偿还",
+            "熬过无人问津的日子，才配拥有诗和远方",
+            "愿你合上笔盖的那一刻，有战士收刀入鞘般的骄傲",
             "别假装努力，结果不会陪你演戏",
-            "哪怕从这一刻开始，你也赢了刚才的自己",
-            "总有第一名，为什么不能是你",
+            "哪怕从这一刻开始，你已赢了刚才的自己",
+            "总有第一名，为什么不能是你呢",
             "既然有机会，就去争一争",
-            "不去想能不能赢，只去想今天弄懂了没",
+            "不去想能不能赢，只去想今天是否弄懂",
             "干就完事了",
-            "没有醒不来的早晨，没有熬不过的迷茫",
-            "你背不下来的书，总有人能背下来",
+            "没有醒不来的早晨，也没有熬不过的迷茫",
+            "你背不下来的书，自然有人背得下来",
             "你要记住，胜者为王",
-            "现在刷题受的累，都是以后看世界的路",
-            "凌晨六点的天很黑，但录取通知书上的名字很耀眼",
-            "没有凭空而来的成绩，只有持之以恒的努力",
-            "与其用泪水悔恨昨天，不如用汗水拼搏今天",
-            "眉毛上的汗水和眉毛下的泪水，你必须选择一样",
+            "现在刷题受的累，终将成为看世界的道路",
+            "凌晨六点的天很黑，但录取通知书上的名字足够耀眼",
+            "没有凭空而来的好成绩，只有持之以恒的努力",
+            "与其用泪水悔恨昨天，不如挥洒汗水拼搏今天",
+            "眉毛上的汗水和眉毛下的泪水，你只能选择一样",
             "尘埃落定前，请奋力一搏"
         ];
 
         let currentQuoteIndex = 0;
         let activeQuoteSlot = 1;
         let quoteInterval = null;
+        let quoteExpanded = false;
         const QUOTE_SWITCH_INTERVAL = 20 * 60 * 1000;
+        const MAX_QUOTE_LINES = 3;
+        const COLLAPSED_LINES = 2;
 
         const quoteText1 = document.getElementById('quoteText1');
         const quoteText2 = document.getElementById('quoteText2');
+        const quoteContainer = document.getElementById('quoteContainer');
+        const quoteExpandBtn = document.getElementById('quoteExpandBtn');
+
+        const quoteMeasurer = document.createElement('div');
+        quoteMeasurer.style.cssText =
+            'position:absolute;visibility:hidden;pointer-events:none;' +
+            "font-family:'Space Mono',sans-serif;letter-spacing:0.08em;line-height:1.4;" +
+            'white-space:normal;word-break:break-word;';
+        document.body.appendChild(quoteMeasurer);
+
+        function getComputedFontSize(el) {
+            return parseFloat(getComputedStyle(el).fontSize);
+        }
+
+        function measureQuoteHeight(text, fontSize, containerWidth) {
+            quoteMeasurer.style.fontSize = fontSize + 'px';
+            quoteMeasurer.style.width = containerWidth + 'px';
+            quoteMeasurer.textContent = text;
+            return quoteMeasurer.getBoundingClientRect().height;
+        }
+
+        function getLineHeight(fontSize) {
+            return fontSize * 1.4;
+        }
+
+        function adaptQuoteFontSize(el) {
+            el.style.fontSize = '';
+            const baseFontSize = getComputedFontSize(el);
+            const containerWidth = quoteContainer.clientWidth;
+            if (containerWidth <= 0) return baseFontSize;
+
+            const fullHeight = measureQuoteHeight(el.textContent, baseFontSize, containerWidth);
+            const maxAllowedHeight = getLineHeight(baseFontSize) * MAX_QUOTE_LINES;
+
+            if (fullHeight <= maxAllowedHeight) return baseFontSize;
+
+            const ratio = maxAllowedHeight / fullHeight;
+            const scaledSize = Math.max(12, Math.floor(baseFontSize * ratio));
+            el.style.fontSize = scaledSize + 'px';
+            return scaledSize;
+        }
+
+        function checkQuoteOverflow(el) {
+            const fontSize = getComputedFontSize(el);
+            const containerWidth = quoteContainer.clientWidth;
+            if (containerWidth <= 0) return false;
+
+            const fullHeight = measureQuoteHeight(el.textContent, fontSize, containerWidth);
+            const collapsedHeight = getLineHeight(fontSize) * COLLAPSED_LINES;
+            return fullHeight > collapsedHeight + 2;
+        }
+
+        function updateExpandButton() {
+            const activeEl = activeQuoteSlot === 1 ? quoteText1 : quoteText2;
+            const isOverflow = checkQuoteOverflow(activeEl);
+
+            if (isOverflow && !quoteExpanded) {
+                quoteExpandBtn.textContent = '展开';
+                quoteExpandBtn.classList.add('visible');
+            } else if (quoteExpanded) {
+                quoteExpandBtn.textContent = '收起';
+                quoteExpandBtn.classList.add('visible');
+            } else {
+                quoteExpandBtn.classList.remove('visible');
+            }
+        }
+
+        function updateContainerHeight(animate) {
+            const activeEl = activeQuoteSlot === 1 ? quoteText1 : quoteText2;
+            const fontSize = getComputedFontSize(activeEl);
+            const containerWidth = quoteContainer.clientWidth;
+            if (containerWidth <= 0) return;
+
+            const fullHeight = measureQuoteHeight(activeEl.textContent, fontSize, containerWidth);
+            const lineHeight = getLineHeight(fontSize);
+
+            let targetHeight;
+            if (quoteExpanded || fullHeight <= lineHeight * COLLAPSED_LINES + 2) {
+                targetHeight = fullHeight;
+            } else {
+                targetHeight = lineHeight * COLLAPSED_LINES;
+            }
+
+            const isOverflow = checkQuoteOverflow(activeEl);
+            if (isOverflow) {
+                targetHeight += 26;
+            }
+
+            if (!animate) {
+                quoteContainer.style.transition = 'none';
+            }
+            quoteContainer.style.height = targetHeight + 'px';
+            if (!animate) {
+                void quoteContainer.offsetHeight;
+                quoteContainer.style.transition = '';
+            }
+        }
+
+        function applyCollapsedState() {
+            const activeEl = activeQuoteSlot === 1 ? quoteText1 : quoteText2;
+            const inactiveEl = activeQuoteSlot === 1 ? quoteText2 : quoteText1;
+
+            if (!quoteExpanded && checkQuoteOverflow(activeEl)) {
+                activeEl.classList.add('collapsed');
+            } else {
+                activeEl.classList.remove('collapsed');
+            }
+            inactiveEl.classList.remove('collapsed');
+        }
 
         function initQuote() {
             currentQuoteIndex = Math.floor(Math.random() * quotes.length);
             quoteText1.textContent = quotes[currentQuoteIndex];
+            adaptQuoteFontSize(quoteText1);
             quoteText1.classList.add('active');
             activeQuoteSlot = 1;
+            quoteExpanded = false;
+            applyCollapsedState();
+            updateContainerHeight(false);
+            updateExpandButton();
         }
 
         function switchQuote() {
             currentQuoteIndex = (currentQuoteIndex + 1) % quotes.length;
             const nextText = quotes[currentQuoteIndex];
 
-            if (activeQuoteSlot === 1) {
-                quoteText1.classList.remove('active');
-                quoteText1.classList.add('fade-out');
-                quoteText2.textContent = nextText;
-                quoteText2.classList.add('active');
-                setTimeout(() => {
-                    quoteText1.classList.remove('fade-out');
-                }, 1200);
-                activeQuoteSlot = 2;
-            } else {
-                quoteText2.classList.remove('active');
-                quoteText2.classList.add('fade-out');
-                quoteText1.textContent = nextText;
-                quoteText1.classList.add('active');
-                setTimeout(() => {
-                    quoteText2.classList.remove('fade-out');
-                }, 1200);
-                activeQuoteSlot = 1;
+            const outgoingEl = activeQuoteSlot === 1 ? quoteText1 : quoteText2;
+            const incomingEl = activeQuoteSlot === 1 ? quoteText2 : quoteText1;
+
+            incomingEl.textContent = nextText;
+            adaptQuoteFontSize(incomingEl);
+
+            quoteExpanded = false;
+
+            const outFontSize = getComputedFontSize(outgoingEl);
+            const inFontSize = getComputedFontSize(incomingEl);
+            const containerWidth = quoteContainer.clientWidth;
+
+            let outH = 0, inH = 0;
+            if (containerWidth > 0) {
+                outH = measureQuoteHeight(outgoingEl.textContent, outFontSize, containerWidth);
+                inH = measureQuoteHeight(incomingEl.textContent, inFontSize, containerWidth);
             }
+            let maxH = Math.max(outH, inH);
+            if (checkQuoteOverflow(incomingEl)) {
+                maxH += 26;
+            }
+            quoteContainer.style.height = maxH + 'px';
+
+            outgoingEl.classList.remove('active');
+            outgoingEl.classList.add('fade-out');
+            incomingEl.classList.add('active');
+
+            activeQuoteSlot = activeQuoteSlot === 1 ? 2 : 1;
+
+            applyCollapsedState();
+            updateExpandButton();
+
+            setTimeout(() => {
+                outgoingEl.classList.remove('fade-out');
+                updateContainerHeight(true);
+            }, 1200);
         }
 
         function startQuoteRotation() {
             if (quoteInterval) clearInterval(quoteInterval);
             quoteInterval = setInterval(switchQuote, QUOTE_SWITCH_INTERVAL);
         }
+
+        quoteExpandBtn.addEventListener('click', () => {
+            quoteExpanded = !quoteExpanded;
+            applyCollapsedState();
+            updateContainerHeight(true);
+            updateExpandButton();
+        });
 
         // ========== 考试倒计时 ==========
         const EXAM_DATE = new Date('2026-07-06T00:00:00+08:00');
@@ -791,6 +968,11 @@
             if (currentMode === 'default') {
                 updateClock();
             }
+            const activeEl = activeQuoteSlot === 1 ? quoteText1 : quoteText2;
+            adaptQuoteFontSize(activeEl);
+            applyCollapsedState();
+            updateContainerHeight(false);
+            updateExpandButton();
         });
 
         timeSlider.addEventListener('input', () => {
