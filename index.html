@@ -63,7 +63,7 @@
             left: 0;
             transform: translateY(-50%);
             font-family: 'Space Mono', sans-serif;
-            font-size: clamp(14px, 2vw, 20px);
+            font-size: clamp(20px, 3.5vw, 36px);
             letter-spacing: 0.08em;
             line-height: 1.6;
             color: rgba(255, 255, 255, 0.75);
@@ -110,43 +110,40 @@
 
         /* ========== 考试倒计时区域 ========== */
         .countdown-container {
-            text-align: center;
-            margin-top: 1vh;
+            position: fixed;
+            right: 32px;
+            bottom: 32px;
+            text-align: right;
+            z-index: 50;
         }
 
         .countdown-label {
             font-family: 'Space Mono', sans-serif;
-            font-size: clamp(11px, 1.4vw, 15px);
+            font-size: clamp(11px, 1.2vw, 16px);
             letter-spacing: 0.15em;
             color: rgba(255, 255, 255, 0.5);
-            margin-bottom: 0.5em;
+            margin-bottom: 0.3em;
         }
 
         .countdown-timer {
             font-family: 'Space Mono', sans-serif;
-            font-size: clamp(16px, 2.5vw, 28px);
+            font-size: clamp(28px, 5vw, 56px);
             letter-spacing: 0.06em;
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1;
         }
 
         .countdown-timer .countdown-unit {
             display: inline-block;
-            min-width: 2.2em;
+            min-width: 1.8em;
             text-align: center;
-        }
-
-        .countdown-timer .countdown-separator {
-            display: inline-block;
-            width: 0.6em;
-            text-align: center;
-            opacity: 0.5;
         }
 
         .countdown-timer .countdown-tag {
-            font-size: 0.55em;
+            font-size: 0.5em;
             opacity: 0.5;
             vertical-align: baseline;
-            margin-left: 0.1em;
+            margin-left: 0.15em;
         }
 
         .bottom-controls {
@@ -222,7 +219,7 @@
             }
 
             .quote-text {
-                font-size: clamp(13px, 3.8vw, 18px);
+                font-size: clamp(16px, 5vw, 28px);
             }
 
             .clock {
@@ -241,12 +238,17 @@
                 display: none;
             }
 
+            .countdown-container {
+                right: 16px;
+                bottom: 16px;
+            }
+
             .countdown-label {
                 font-size: clamp(10px, 2.8vw, 14px);
             }
 
             .countdown-timer {
-                font-size: clamp(14px, 4.5vw, 24px);
+                font-size: clamp(22px, 7vw, 42px);
             }
 
             .mode-toggle {
@@ -311,15 +313,9 @@
             <div class="clock-row" id="clockMinutes">00</div>
         </div>
         <div class="countdown-container" id="countdownContainer">
-            <div class="countdown-label">距离考试</div>
+            <div class="countdown-label">考试倒计时</div>
             <div class="countdown-timer" id="countdownTimer">
                 <span class="countdown-unit" id="cdDays">00</span><span class="countdown-tag">天</span>
-                <span class="countdown-separator">:</span>
-                <span class="countdown-unit" id="cdHours">00</span><span class="countdown-tag">时</span>
-                <span class="countdown-separator">:</span>
-                <span class="countdown-unit" id="cdMinutes">00</span><span class="countdown-tag">分</span>
-                <span class="countdown-separator">:</span>
-                <span class="countdown-unit" id="cdSeconds">00</span><span class="countdown-tag">秒</span>
             </div>
         </div>
     </div>
@@ -403,10 +399,6 @@
         // ========== 考试倒计时 ==========
         const EXAM_DATE = new Date('2026-07-06T00:00:00+08:00');
         const cdDays = document.getElementById('cdDays');
-        const cdHours = document.getElementById('cdHours');
-        const cdMinutes = document.getElementById('cdMinutes');
-        const cdSeconds = document.getElementById('cdSeconds');
-        const countdownContainer = document.getElementById('countdownContainer');
 
         function updateCountdown() {
             const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Shanghai' }));
@@ -414,21 +406,11 @@
 
             if (diff <= 0) {
                 cdDays.textContent = '00';
-                cdHours.textContent = '00';
-                cdMinutes.textContent = '00';
-                cdSeconds.textContent = '00';
                 return;
             }
 
             const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
             cdDays.textContent = String(days).padStart(2, '0');
-            cdHours.textContent = String(hours).padStart(2, '0');
-            cdMinutes.textContent = String(minutes).padStart(2, '0');
-            cdSeconds.textContent = String(seconds).padStart(2, '0');
         }
 
         // ========== 渐变背景配置 ==========
