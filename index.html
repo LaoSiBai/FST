@@ -51,13 +51,17 @@
             position: relative;
             width: 80vw;
             max-width: 700px;
-            min-height: 2.5em;
+            height: 3em;
+            overflow: hidden;
             text-align: center;
         }
 
         .quote-text {
-            position: relative;
+            position: absolute;
             width: 100%;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%) translateY(10px);
             font-family: 'Space Mono', sans-serif;
             font-size: clamp(20px, 3.5vw, 36px);
             letter-spacing: 0.08em;
@@ -65,18 +69,17 @@
             color: rgba(255, 255, 255, 0.75);
             opacity: 0;
             transition: opacity 1.2s ease, transform 1.2s ease;
-            transform: translateY(10px);
             white-space: nowrap;
         }
 
         .quote-text.active {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateY(-50%) translateY(0);
         }
 
         .quote-text.fade-out {
             opacity: 0;
-            transform: translateY(-10px);
+            transform: translateY(-50%) translateY(-10px);
         }
 
         /* ========== 时钟区域 ========== */
@@ -220,7 +223,7 @@
 
             .quote-container {
                 width: 90vw;
-                min-height: 2.5em;
+                height: 3em;
             }
 
             .quote-text {
