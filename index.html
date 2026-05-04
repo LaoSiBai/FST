@@ -17,7 +17,6 @@
         html, body {
             width: 100%;
             height: 100%;
-            background: #000;
             overflow: hidden;
         }
 
@@ -25,16 +24,48 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: color 0.5s ease;
+        }
+
+        body.minimal {
+            background: #000;
+            color: #fff;
+        }
+
+        body.default {
+            color: rgba(255, 255, 255, 0.95);
         }
 
         .clock {
             font-family: 'Space Mono', sans-serif;
             font-size: 8vw;
             font-weight: 400;
-            color: #fff;
             letter-spacing: 0.05em;
             line-height: 1;
             white-space: nowrap;
+            z-index: 1;
+        }
+
+        /* 模式切换按钮 */
+        .mode-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 8px 16px;
+            color: inherit;
+            font-family: 'Space Mono', sans-serif;
+            font-size: 12px;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        .mode-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
         }
 
         /* 调试面板 - 发布时可删除 */
@@ -67,7 +98,7 @@
         }
 
         .debug-panel .time-display {
-            color: #fff;
+            color: inherit;
             font-family: 'Space Mono', sans-serif;
             font-size: 14px;
             min-width: 50px;
@@ -75,7 +106,8 @@
         }
     </style>
 </head>
-<body>
+<body class="minimal">
+    <button class="mode-toggle" id="modeToggle">切换模式</button>
     <div class="clock" id="clock">00:00</div>
 
     <!-- 调试面板 - 发布时可删除此区块 -->
@@ -89,9 +121,231 @@
         const clockEl = document.getElementById('clock');
         const timeSlider = document.getElementById('timeSlider');
         const debugTimeEl = document.getElementById('debugTime');
+        const modeToggle = document.getElementById('modeToggle');
+        const body = document.body;
 
         // 调试模式开关
         const DEBUG = true;
+
+        // 模式: 'minimal' | 'default'
+        let currentMode = 'minimal';
+
+        // 一天中的关键时间点（小时）及其对应的渐变配置
+        // 每个配置包含多个色标(stop)，每个stop有位置(0-100)和颜色(r,g,b)
+        // easing: 该时间段使用的缓动曲线名称
+        const timeStops = [
+            {
+                hour: 0,
+                easing: 'easeInOutCubic',
+                stops: [
+                    { pos: 0,  color: [1, 2, 8] },
+                    { pos: 40, color: [3, 5, 15] },
+                    { pos: 70, color: [5, 8, 22] },
+                    { pos: 100,color: [2, 4, 12] }
+                ]
+            },
+            {
+                hour: 3.5,
+                easing: 'easeInOutCubic',
+                stops: [
+                    { pos: 0,  color: [2, 3, 10] },
+                    { pos: 35, color: [4, 6, 18] },
+                    { pos: 65, color: [6, 8, 25] },
+                    { pos: 100,color: [3, 4, 14] }
+                ]
+            },
+            {
+                hour: 4.5,
+                easing: 'easeOutCubic',
+                stops: [
+                    { pos: 0,  color: [4, 5, 18] },
+                    { pos: 30, color: [12, 10, 40] },
+                    { pos: 60, color: [30, 22, 65] },
+                    { pos: 100,color: [10, 8, 32] }
+                ]
+            },
+            {
+                hour: 5.5,
+                easing: 'easeInOutQuad',
+                stops: [
+                    { pos: 0,  color: [18, 16, 50] },
+                    { pos: 25, color: [55, 45, 90] },
+                    { pos: 50, color: [135, 105, 95] },
+                    { pos: 75, color: [195, 155, 75] },
+                    { pos: 100,color: [85, 75, 125] }
+                ]
+            },
+            {
+                hour: 7.5,
+                easing: 'easeInOutCubic',
+                stops: [
+                    { pos: 0,  color: [70, 120, 190] },
+                    { pos: 35, color: [120, 180, 225] },
+                    { pos: 65, color: [185, 220, 195] },
+                    { pos: 100,color: [95, 160, 210] }
+                ]
+            },
+            {
+                hour: 11,
+                easing: 'easeInOutQuad',
+                stops: [
+                    { pos: 0,  color: [55, 165, 235] },
+                    { pos: 45, color: [110, 200, 245] },
+                    { pos: 75, color: [180, 230, 205] },
+                    { pos: 100,color: [75, 180, 230] }
+                ]
+            },
+            {
+                hour: 14,
+                easing: 'easeInOutCubic',
+                stops: [
+                    { pos: 0,  color: [65, 160, 230] },
+                    { pos: 40, color: [130, 190, 220] },
+                    { pos: 70, color: [195, 210, 165] },
+                    { pos: 100,color: [95, 170, 215] }
+                ]
+            },
+            {
+                hour: 16.5,
+                easing: 'easeInCubic',
+                stops: [
+                    { pos: 0,  color: [55, 145, 215] },
+                    { pos: 35, color: [150, 175, 195] },
+                    { pos: 65, color: [210, 185, 125] },
+                    { pos: 100,color: [110, 145, 185] }
+                ]
+            },
+            {
+                hour: 18.5,
+                easing: 'easeOutCubic',
+                stops: [
+                    { pos: 0,  color: [40, 85, 155] },
+                    { pos: 30, color: [185, 125, 85] },
+                    { pos: 55, color: [225, 155, 65] },
+                    { pos: 80, color: [165, 105, 95] },
+                    { pos: 100,color: [65, 60, 115] }
+                ]
+            },
+            {
+                hour: 20.5,
+                easing: 'easeInOutCubic',
+                stops: [
+                    { pos: 0,  color: [20, 30, 75] },
+                    { pos: 35, color: [85, 50, 90] },
+                    { pos: 65, color: [50, 30, 80] },
+                    { pos: 100,color: [18, 20, 50] }
+                ]
+            },
+            {
+                hour: 22.5,
+                easing: 'easeInCubic',
+                stops: [
+                    { pos: 0,  color: [5, 7, 18] },
+                    { pos: 40, color: [12, 15, 38] },
+                    { pos: 70, color: [8, 10, 28] },
+                    { pos: 100,color: [2, 4, 14] }
+                ]
+            }
+        ];
+
+        // 缓动曲线函数
+        function easeInOutCubic(t) {
+            return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        }
+
+        function easeInOutQuad(t) {
+            return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        }
+
+        function easeOutCubic(t) {
+            return 1 - Math.pow(1 - t, 3);
+        }
+
+        function easeInCubic(t) {
+            return t * t * t;
+        }
+
+        // 线性插值
+        function lerp(a, b, t) {
+            return a + (b - a) * t;
+        }
+
+        // 颜色插值
+        function lerpColor(c1, c2, t) {
+            return [
+                Math.round(lerp(c1[0], c2[0], t)),
+                Math.round(lerp(c1[1], c2[1], t)),
+                Math.round(lerp(c1[2], c2[2], t))
+            ];
+        }
+
+        // 缓动函数映射表
+        const easingMap = {
+            easeInOutCubic,
+            easeInOutQuad,
+            easeOutCubic,
+            easeInCubic
+        };
+
+        // 获取当前时间对应的渐变配置（支持跨天循环）
+        function getGradientConfig(totalMinutes) {
+            const hour = totalMinutes / 60;
+
+            // 找到当前时间所在的区间
+            let i = 0;
+            for (; i < timeStops.length - 1; i++) {
+                if (hour >= timeStops[i].hour && hour < timeStops[i + 1].hour) {
+                    break;
+                }
+            }
+
+            const start = timeStops[i];
+            const end = timeStops[(i + 1) % timeStops.length];
+            const duration = (end.hour > start.hour)
+                ? (end.hour - start.hour)
+                : (24 - start.hour + end.hour);
+            const rawProgress = (hour - start.hour) / duration;
+
+            // 应用非线性缓动曲线
+            const easingName = start.easing || 'easeInOutCubic';
+            const easingFn = easingMap[easingName] || easeInOutCubic;
+            const progress = easingFn(rawProgress);
+
+            // 对两个关键帧的色标进行插值
+            const maxStops = Math.max(start.stops.length, end.stops.length);
+            const interpolatedStops = [];
+
+            for (let s = 0; s < maxStops; s++) {
+                const s1 = start.stops[Math.min(s, start.stops.length - 1)];
+                const s2 = end.stops[Math.min(s, end.stops.length - 1)];
+
+                interpolatedStops.push({
+                    pos: lerp(s1.pos, s2.pos, progress),
+                    color: lerpColor(s1.color, s2.color, progress)
+                });
+            }
+
+            return interpolatedStops;
+        }
+
+        // 生成 CSS 渐变字符串（径向渐变，圆心在上方远处）
+        function generateGradient(stops) {
+            const colorStops = stops.map(s =>
+                `rgb(${s.color[0]}, ${s.color[1]}, ${s.color[2]}) ${s.pos.toFixed(2)}%`
+            ).join(', ');
+            // circle 180vmax at 50% -120%: 巨大圆弧，圆心在极上方
+            // 色标推到 150% 以扩展可见渐变区域
+            const extendedStops = stops.map(s =>
+                `rgb(${s.color[0]}, ${s.color[1]}, ${s.color[2]}) ${(s.pos * 1.5).toFixed(2)}%`
+            ).join(', ');
+            return `radial-gradient(circle 180vmax at 50% -120%, ${extendedStops})`;
+        }
+
+        function updateBackground(totalMinutes) {
+            if (currentMode !== 'default') return;
+            const stops = getGradientConfig(totalMinutes);
+            body.style.background = generateGradient(stops);
+        }
 
         function formatTime(date) {
             const h = String(date.getHours()).padStart(2, '0');
@@ -101,9 +355,9 @@
 
         function updateClock() {
             let now;
+            let totalMinutes;
             if (DEBUG && timeSlider) {
-                // 调试模式：使用滑杆值（分钟数）
-                const totalMinutes = parseInt(timeSlider.value, 10);
+                totalMinutes = parseInt(timeSlider.value, 10);
                 const h = Math.floor(totalMinutes / 60);
                 const m = totalMinutes % 60;
                 now = new Date();
@@ -111,9 +365,26 @@
                 debugTimeEl.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
             } else {
                 now = new Date();
+                totalMinutes = now.getHours() * 60 + now.getMinutes();
             }
             clockEl.textContent = formatTime(now);
+            updateBackground(totalMinutes);
         }
+
+        // 模式切换
+        modeToggle.addEventListener('click', () => {
+            currentMode = currentMode === 'minimal' ? 'default' : 'minimal';
+            body.className = currentMode;
+            if (currentMode === 'minimal') {
+                body.style.background = '';
+            } else {
+                const now = new Date();
+                const totalMinutes = DEBUG && timeSlider
+                    ? parseInt(timeSlider.value, 10)
+                    : now.getHours() * 60 + now.getMinutes();
+                updateBackground(totalMinutes);
+            }
+        });
 
         // 初始化滑杆为当前时间
         if (DEBUG && timeSlider) {
@@ -131,7 +402,7 @@
             timeSlider.addEventListener('input', updateClock);
         }
 
-        // 按 F12 或 D 键切换调试面板
+        // 按 D 键切换调试面板
         document.addEventListener('keydown', (e) => {
             if (e.key === 'd' || e.key === 'D') {
                 const panel = document.getElementById('debugPanel');
