@@ -49,74 +49,39 @@
         /* ========== 励志语区域 ========== */
         .quote-container {
             position: relative;
-            width: 80vw;
-            max-width: 700px;
+            width: 90vw;
+            max-width: 800px;
             text-align: center;
-            min-height: 2.8em;
-            transition: height 0.5s ease;
+            min-height: 3em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .quote-text {
             position: absolute;
             width: 100%;
-            left: 0;
-            top: 0;
+            left: 50%;
+            top: 50%;
             font-family: 'Space Mono', sans-serif;
-            font-size: clamp(20px, 3.5vw, 36px);
+            font-size: clamp(16px, 3.5vw, 32px);
             letter-spacing: 0.08em;
-            line-height: 1.4;
+            line-height: 1.5;
             color: rgba(255, 255, 255, 0.75);
             opacity: 0;
             transition: opacity 1.2s ease, transform 1.2s ease;
-            white-space: normal;
-            word-break: break-word;
-            transform: translateY(10px);
+            word-break: keep-all;
+            transform: translate(-50%, calc(-50% + 10px));
         }
 
         .quote-text.active {
             opacity: 1;
-            transform: translateY(0);
+            transform: translate(-50%, -50%);
         }
 
         .quote-text.fade-out {
             opacity: 0;
-            transform: translateY(-10px);
-        }
-
-        .quote-text.collapsed {
-            max-height: 2.8em;
-            overflow: hidden;
-        }
-
-        .quote-expand-btn {
-            position: absolute;
-            bottom: 2px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.08);
-            border: none;
-            border-radius: 10px;
-            color: rgba(255, 255, 255, 0.35);
-            font-family: 'Space Mono', sans-serif;
-            font-size: 11px;
-            letter-spacing: 0.05em;
-            cursor: pointer;
-            padding: 2px 14px;
-            opacity: 0;
-            transition: opacity 0.3s ease, color 0.3s ease, background 0.3s ease;
-            pointer-events: none;
-            z-index: 10;
-            white-space: nowrap;
-        }
-
-        .quote-expand-btn.visible {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .quote-expand-btn:hover {
-            color: rgba(255, 255, 255, 0.7);
-            background: rgba(255, 255, 255, 0.15);
+            transform: translate(-50%, calc(-50% - 10px));
         }
 
         /* ========== 时钟区域 ========== */
@@ -349,7 +314,6 @@
         <div class="quote-container" id="quoteContainer">
             <div class="quote-text active" id="quoteText1"></div>
             <div class="quote-text" id="quoteText2"></div>
-            <button class="quote-expand-btn" id="quoteExpandBtn">展开</button>
         </div>
         <div class="clock-row-wrapper">
             <div class="clock" id="clock">
@@ -415,191 +379,62 @@
             "尘埃落定前，请奋力一搏"
         ];
 
-        let currentQuoteIndex = 0;
+        let currentQuoteIndex = -1;
         let activeQuoteSlot = 1;
-        let quoteInterval = null;
-        let quoteExpanded = false;
+        let lastQuoteTime = 0;
         const QUOTE_SWITCH_INTERVAL = 20 * 60 * 1000;
-        const MAX_QUOTE_LINES = 3;
-        const COLLAPSED_LINES = 2;
 
         const quoteText1 = document.getElementById('quoteText1');
         const quoteText2 = document.getElementById('quoteText2');
-        const quoteContainer = document.getElementById('quoteContainer');
-        const quoteExpandBtn = document.getElementById('quoteExpandBtn');
-
-        const quoteMeasurer = document.createElement('div');
-        quoteMeasurer.style.cssText =
-            'position:absolute;visibility:hidden;pointer-events:none;' +
-            "font-family:'Space Mono',sans-serif;letter-spacing:0.08em;line-height:1.4;" +
-            'white-space:normal;word-break:break-word;';
-        document.body.appendChild(quoteMeasurer);
-
-        function getComputedFontSize(el) {
-            return parseFloat(getComputedStyle(el).fontSize);
-        }
-
-        function measureQuoteHeight(text, fontSize, containerWidth) {
-            quoteMeasurer.style.fontSize = fontSize + 'px';
-            quoteMeasurer.style.width = containerWidth + 'px';
-            quoteMeasurer.textContent = text;
-            return quoteMeasurer.getBoundingClientRect().height;
-        }
-
-        function getLineHeight(fontSize) {
-            return fontSize * 1.4;
-        }
-
-        function adaptQuoteFontSize(el) {
-            el.style.fontSize = '';
-            const baseFontSize = getComputedFontSize(el);
-            const containerWidth = quoteContainer.clientWidth;
-            if (containerWidth <= 0) return baseFontSize;
-
-            const fullHeight = measureQuoteHeight(el.textContent, baseFontSize, containerWidth);
-            const maxAllowedHeight = getLineHeight(baseFontSize) * MAX_QUOTE_LINES;
-
-            if (fullHeight <= maxAllowedHeight) return baseFontSize;
-
-            const ratio = maxAllowedHeight / fullHeight;
-            const scaledSize = Math.max(12, Math.floor(baseFontSize * ratio));
-            el.style.fontSize = scaledSize + 'px';
-            return scaledSize;
-        }
-
-        function checkQuoteOverflow(el) {
-            const fontSize = getComputedFontSize(el);
-            const containerWidth = quoteContainer.clientWidth;
-            if (containerWidth <= 0) return false;
-
-            const fullHeight = measureQuoteHeight(el.textContent, fontSize, containerWidth);
-            const collapsedHeight = getLineHeight(fontSize) * COLLAPSED_LINES;
-            return fullHeight > collapsedHeight + 2;
-        }
-
-        function updateExpandButton() {
-            const activeEl = activeQuoteSlot === 1 ? quoteText1 : quoteText2;
-            const isOverflow = checkQuoteOverflow(activeEl);
-
-            if (isOverflow && !quoteExpanded) {
-                quoteExpandBtn.textContent = '展开';
-                quoteExpandBtn.classList.add('visible');
-            } else if (quoteExpanded) {
-                quoteExpandBtn.textContent = '收起';
-                quoteExpandBtn.classList.add('visible');
-            } else {
-                quoteExpandBtn.classList.remove('visible');
-            }
-        }
-
-        function updateContainerHeight(animate) {
-            const activeEl = activeQuoteSlot === 1 ? quoteText1 : quoteText2;
-            const fontSize = getComputedFontSize(activeEl);
-            const containerWidth = quoteContainer.clientWidth;
-            if (containerWidth <= 0) return;
-
-            const fullHeight = measureQuoteHeight(activeEl.textContent, fontSize, containerWidth);
-            const lineHeight = getLineHeight(fontSize);
-
-            let targetHeight;
-            if (quoteExpanded || fullHeight <= lineHeight * COLLAPSED_LINES + 2) {
-                targetHeight = fullHeight;
-            } else {
-                targetHeight = lineHeight * COLLAPSED_LINES;
-            }
-
-            const isOverflow = checkQuoteOverflow(activeEl);
-            if (isOverflow) {
-                targetHeight += 26;
-            }
-
-            if (!animate) {
-                quoteContainer.style.transition = 'none';
-            }
-            quoteContainer.style.height = targetHeight + 'px';
-            if (!animate) {
-                void quoteContainer.offsetHeight;
-                quoteContainer.style.transition = '';
-            }
-        }
-
-        function applyCollapsedState() {
-            const activeEl = activeQuoteSlot === 1 ? quoteText1 : quoteText2;
-            const inactiveEl = activeQuoteSlot === 1 ? quoteText2 : quoteText1;
-
-            if (!quoteExpanded && checkQuoteOverflow(activeEl)) {
-                activeEl.classList.add('collapsed');
-            } else {
-                activeEl.classList.remove('collapsed');
-            }
-            inactiveEl.classList.remove('collapsed');
-        }
 
         function initQuote() {
             currentQuoteIndex = Math.floor(Math.random() * quotes.length);
             quoteText1.textContent = quotes[currentQuoteIndex];
-            adaptQuoteFontSize(quoteText1);
+            
+            quoteText1.style.transition = 'none';
             quoteText1.classList.add('active');
+            void quoteText1.offsetWidth;
+            quoteText1.style.transition = '';
+            
             activeQuoteSlot = 1;
-            quoteExpanded = false;
-            applyCollapsedState();
-            updateContainerHeight(false);
-            updateExpandButton();
+            lastQuoteTime = Date.now();
         }
 
         function switchQuote() {
-            currentQuoteIndex = (currentQuoteIndex + 1) % quotes.length;
+            let newIndex;
+            do {
+                newIndex = Math.floor(Math.random() * quotes.length);
+            } while (newIndex === currentQuoteIndex && quotes.length > 1);
+            
+            currentQuoteIndex = newIndex;
             const nextText = quotes[currentQuoteIndex];
 
-            const outgoingEl = activeQuoteSlot === 1 ? quoteText1 : quoteText2;
-            const incomingEl = activeQuoteSlot === 1 ? quoteText2 : quoteText1;
+            const currentSlot = activeQuoteSlot === 1 ? quoteText1 : quoteText2;
+            const nextSlot = activeQuoteSlot === 1 ? quoteText2 : quoteText1;
 
-            incomingEl.textContent = nextText;
-            adaptQuoteFontSize(incomingEl);
+            currentSlot.classList.remove('active');
+            currentSlot.classList.add('fade-out');
 
-            quoteExpanded = false;
+            nextSlot.style.transition = 'none';
+            nextSlot.classList.remove('fade-out');
+            nextSlot.classList.remove('active');
+            nextSlot.textContent = nextText;
 
-            const outFontSize = getComputedFontSize(outgoingEl);
-            const inFontSize = getComputedFontSize(incomingEl);
-            const containerWidth = quoteContainer.clientWidth;
+            void nextSlot.offsetWidth;
 
-            let outH = 0, inH = 0;
-            if (containerWidth > 0) {
-                outH = measureQuoteHeight(outgoingEl.textContent, outFontSize, containerWidth);
-                inH = measureQuoteHeight(incomingEl.textContent, inFontSize, containerWidth);
-            }
-            let maxH = Math.max(outH, inH);
-            if (checkQuoteOverflow(incomingEl)) {
-                maxH += 26;
-            }
-            quoteContainer.style.height = maxH + 'px';
-
-            outgoingEl.classList.remove('active');
-            outgoingEl.classList.add('fade-out');
-            incomingEl.classList.add('active');
+            nextSlot.style.transition = '';
+            nextSlot.classList.add('active');
 
             activeQuoteSlot = activeQuoteSlot === 1 ? 2 : 1;
-
-            applyCollapsedState();
-            updateExpandButton();
-
-            setTimeout(() => {
-                outgoingEl.classList.remove('fade-out');
-                updateContainerHeight(true);
-            }, 1200);
         }
 
-        function startQuoteRotation() {
-            if (quoteInterval) clearInterval(quoteInterval);
-            quoteInterval = setInterval(switchQuote, QUOTE_SWITCH_INTERVAL);
+        function checkQuoteRotation() {
+            const now = Date.now();
+            if (now - lastQuoteTime >= QUOTE_SWITCH_INTERVAL) {
+                switchQuote();
+                lastQuoteTime = now;
+            }
         }
-
-        quoteExpandBtn.addEventListener('click', () => {
-            quoteExpanded = !quoteExpanded;
-            applyCollapsedState();
-            updateContainerHeight(true);
-            updateExpandButton();
-        });
 
         // ========== 考试倒计时 ==========
         const EXAM_DATE = new Date('2026-07-06T00:00:00+08:00');
@@ -901,6 +736,7 @@
             clockInterval = setInterval(() => {
                 updateClock();
                 updateCountdown();
+                checkQuoteRotation();
             }, 1000);
             updateClock();
             updateCountdown();
@@ -968,11 +804,6 @@
             if (currentMode === 'default') {
                 updateClock();
             }
-            const activeEl = activeQuoteSlot === 1 ? quoteText1 : quoteText2;
-            adaptQuoteFontSize(activeEl);
-            applyCollapsedState();
-            updateContainerHeight(false);
-            updateExpandButton();
         });
 
         timeSlider.addEventListener('input', () => {
@@ -999,7 +830,6 @@
         });
 
         initQuote();
-        startQuoteRotation();
         startClock();
     </script>
 </body>
