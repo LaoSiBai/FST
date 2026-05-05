@@ -190,7 +190,10 @@
             <input type="range" id="timeSlider" min="0" max="1439" value="0">
             <span class="time-display" id="debugTime">00:00</span>
         </div>
-        <button class="mode-toggle" id="modeToggle">切换模式</button>
+        <div style="display: flex; gap: 10px;">
+            <button class="mode-toggle" id="fullscreenBtn">全屏</button>
+            <button class="mode-toggle" id="modeToggle">切换模式</button>
+        </div>
     </div>
     <div class="clock" id="clock">
         <div class="clock-row" id="clockHours">00</div>
@@ -205,6 +208,7 @@
         const timeSlider = document.getElementById('timeSlider');
         const debugTimeEl = document.getElementById('debugTime');
         const modeToggle = document.getElementById('modeToggle');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
         const body = document.body;
 
         // 调试模式开关
@@ -557,6 +561,16 @@
                 clockEl.style.backgroundImage = '';
             } else {
                 updateClock();
+            }
+        });
+
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message} (${err.name})`);
+                });
+            } else {
+                document.exitFullscreen();
             }
         });
 
