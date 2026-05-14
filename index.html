@@ -643,7 +643,7 @@
                 return;
             }
 
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24)) + 1;
             cdDays.textContent = String(days).padStart(2, '0');
         }
 
