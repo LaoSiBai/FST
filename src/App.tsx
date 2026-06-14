@@ -93,15 +93,15 @@ function App() {
             />
 
             {debugTime !== null && (
-                <div className="absolute top-4 left-4 bg-black/50 p-4 rounded-lg text-white z-[200]">
-                    <label className="mr-2">调试时间</label>
+                <div className="debug-panel">
+                    <label>调试时间</label>
                     <input 
                         type="range" 
                         min="0" max="1439" 
                         value={debugTime} 
                         onChange={e => setDebugTime(Number(e.target.value))} 
                     />
-                    <span className="ml-2">
+                    <span className="time-display">
                         {String(Math.floor(debugTime / 60)).padStart(2, '0')}:
                         {String(Math.floor(debugTime % 60)).padStart(2, '0')}
                     </span>
