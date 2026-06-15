@@ -27,33 +27,13 @@
       color: rgba(255, 255, 255, 1);
   }
 
-  .minimal .quote-text,
-  .minimal .countdown-label,
-  .minimal .countdown-timer,
-  .minimal .countdown-timer .countdown-tag,
-  .minimal .morph-item,
-  .minimal .decibel-value,
-  .minimal .decibel-unit,
-  .minimal .stat-label,
-  .minimal .decibel-stats,
   .minimal .clock {
       color: #fff !important;
       text-shadow: none !important;
   }
 
-  .minimal .countdown-label,
-  .minimal .countdown-timer,
-  .minimal .countdown-timer .countdown-tag,
-  .minimal .decibel-value,
-  .minimal .decibel-unit,
-  .minimal .stat-label,
-  .minimal .decibel-stats,
   .minimal .clock {
       opacity: 1 !important;
-  }
-
-  .minimal .decibel-main {
-      text-shadow: none !important;
   }
 
   .default {
@@ -71,43 +51,7 @@
       gap: 2vh;
   }
 
-  /* ========== 励志语区域 ========== */
-  .quote-container {
-      position: relative;
-      width: 90vw;
-      max-width: 800px;
-      text-align: center;
-      min-height: 3.6em;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-  }
 
-  .quote-text {
-      position: absolute;
-      width: 100%;
-      left: 50%;
-      top: 50%;
-      font-family: 'Space Mono', sans-serif;
-      font-size: clamp(19.2px, 4.2vw, 38.4px);
-      letter-spacing: 0.08em;
-      line-height: 1.5;
-      color: rgba(255, 255, 255, 0.75);
-      opacity: 0;
-      transition: opacity 1.2s ease, transform 1.2s ease;
-      word-break: keep-all;
-      transform: translate(-50%, calc(-50% + 10px));
-  }
-
-  .quote-text.active {
-      opacity: 1;
-      transform: translate(-50%, -50%);
-  }
-
-  .quote-text.fade-out {
-      opacity: 0;
-      transform: translate(-50%, calc(-50% - 10px));
-  }
 
   /* ========== 时钟区域 ========== */
   .clock {
@@ -143,43 +87,7 @@
       gap: 2vw;
   }
 
-  /* ========== 考试倒计时区域 ========== */
-  .countdown-container {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      justify-content: center;
-      text-align: left;
-  }
 
-  .countdown-label {
-      font-family: 'Space Mono', sans-serif;
-      font-size: clamp(12px, 1.2vw, 16.8px);
-      letter-spacing: 0.15em;
-      color: rgba(255, 255, 255, 0.5);
-      margin-bottom: 0.2em;
-  }
-
-  .countdown-timer {
-      font-family: 'Space Mono', sans-serif;
-      font-size: clamp(26.4px, 4.2vw, 50.4px);
-      letter-spacing: 0.06em;
-      color: rgba(255, 255, 255, 0.9);
-      line-height: 1;
-  }
-
-  .countdown-timer .countdown-unit {
-      display: inline-block;
-      min-width: 1.6em;
-      text-align: center;
-  }
-
-  .countdown-timer .countdown-tag {
-      font-size: 0.5em;
-      opacity: 0.5;
-      vertical-align: baseline;
-      margin-left: 0.1em;
-  }
 
   .bottom-controls {
       position: fixed;
@@ -249,162 +157,7 @@
       gap: 10px;
   }
 
-  .more-container {
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-  }
 
-  .more-container #moreBtn {
-      background: transparent;
-      backdrop-filter: none;
-      z-index: 2;
-      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .more-container #moreBtn::before {
-      display: none;
-  }
-
-  .more-container #moreBtn:hover {
-      background: transparent;
-  }
-
-  .more-container:not(.open):hover .morph-panel {
-      background: rgba(255, 255, 255, 0.2);
-  }
-
-  .more-container:not(.open):active .morph-panel {
-      transform: scale(0.8);
-      transition: transform 0.15s cubic-bezier(0.2, 0, 0.2, 1);
-  }
-
-  .morph-panel {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
-      border: none;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      padding: 6px;
-      overflow: hidden;
-      opacity: 1;
-      pointer-events: none;
-      transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), height 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), border-radius 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease, transform 0.6s cubic-bezier(0.34, 2.2, 0.4, 1);
-      z-index: 1;
-  }
-
-  .more-container.open .morph-panel {
-      width: 110px;
-      height: 96px;
-      border-radius: 24px;
-      bottom: 0;
-      left: 0;
-      pointer-events: auto;
-  }
-
-  .more-container.open #moreBtn {
-      opacity: 0;
-      pointer-events: none;
-      transform: translate(35px, -28px) rotate(90deg) scale(0);
-  }
-
-  .morph-item {
-      padding: 10px 0;
-      color: rgba(255, 255, 255, 0.5);
-      font-family: 'Space Mono', sans-serif;
-      font-size: 13px;
-      text-align: center;
-      cursor: pointer;
-      transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease, border-radius 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.4s cubic-bezier(0.34, 2.2, 0.4, 1);
-      white-space: nowrap;
-      width: 100%;
-      border-radius: 50%;
-      background: transparent;
-      opacity: 0;
-      pointer-events: none;
-  }
-
-  .more-container.open .morph-item {
-      opacity: 1;
-      pointer-events: auto;
-      border-radius: 18px;
-      transition: opacity 0.3s ease 0.1s, background 0.2s ease, color 0.2s ease, border-radius 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.4s cubic-bezier(0.34, 2.2, 0.4, 1);
-  }
-
-  .morph-item.active {
-      color: #fff;
-      background: rgba(255, 255, 255, 0.2);
-  }
-
-  .morph-item:not(.active):hover {
-      color: rgba(255, 255, 255, 0.8);
-      background: rgba(255, 255, 255, 0.1);
-  }
-
-  .morph-item:active {
-      transform: scale(0.9);
-      transition: transform 0.15s cubic-bezier(0.2, 0, 0.2, 1);
-  }
-
-  /* ========== 分贝仪 UI ========== */
-  .decibel-container {
-      gap: 4vh;
-  }
-
-  .decibel-main {
-      display: flex;
-      align-items: baseline;
-      justify-content: center;
-      gap: 1vw;
-      font-family: 'Space Mono', sans-serif;
-      text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
-  }
-
-  .decibel-value {
-      font-size: clamp(80px, 15vw, 200px);
-      font-weight: bold;
-      line-height: 1;
-  }
-
-  .decibel-unit {
-      font-size: clamp(24px, 4vw, 50px);
-      opacity: 0.8;
-  }
-
-  .decibel-stats {
-      display: flex;
-      gap: 8vw;
-      font-family: 'Space Mono', sans-serif;
-      opacity: 0.7;
-  }
-
-  .stat-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-  }
-
-  .stat-label {
-      font-size: clamp(12px, 1.5vw, 16px);
-      letter-spacing: 0.1em;
-  }
-
-  .stat-value {
-      font-size: clamp(20px, 3vw, 32px);
-      font-weight: bold;
-  }
 
   .debug-panel {
       position: absolute;
@@ -471,10 +224,7 @@
 @layer utilities {
   @media screen and (max-width: 768px) {
       .main-container { gap: 3vh; }
-      .quote-container { width: 90vw; }
-      .quote-text { font-size: clamp(19.2px, 6vw, 33.6px); }
       .clock-row-wrapper { gap: 3vw; }
-      .countdown-timer { font-size: clamp(21.6px, 6vw, 38.4px); }
       .clock {
           font-size: 26.4vw;
           letter-spacing: 0.05em;
@@ -484,21 +234,10 @@
       }
       .clock-row { display: block; }
       .clock-colon { display: none; }
-      .countdown-label { font-size: clamp(10.8px, 2.6vw, 14.4px); }
       .icon-btn { width: 44px; height: 44px; }
       .icon-btn .material-symbols-rounded { font-size: 24px; }
       .bottom-controls { bottom: 20px; gap: 12px; }
       .controls-row { gap: 8px; }
-      .morph-panel { width: 44px; height: 44px; }
-      .more-container.open .morph-panel {
-          width: 120px; height: 104px; border-radius: 28px; bottom: 0; left: 0;
-      }
-      .more-container.open #moreBtn {
-          transform: translate(38px, -30px) rotate(90deg) scale(0);
-      }
-      .morph-item { font-size: 14px; padding: 12px 0; }
-      .more-container.open .morph-item { border-radius: 22px; }
-      .decibel-stats { gap: 12vw; }
       .debug-panel { padding: 10px 16px; }
       .debug-panel label { font-size: 12px; }
       .debug-panel input[type="range"] { width: 150px; }

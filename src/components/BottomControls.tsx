@@ -1,21 +1,16 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 type ThemeMode = 'default' | 'minimal';
-type ViewMode = 'time' | 'decibel';
 
 interface BottomControlsProps {
   currentMode: ThemeMode;
   onToggleMode: () => void;
-  currentView: ViewMode;
-  onSwitchView: (view: ViewMode) => void;
 }
 
 export const BottomControls: React.FC<BottomControlsProps> = ({
-  currentMode, onToggleMode, currentView, onSwitchView
+  currentMode, onToggleMode
 }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isMoreOpen, setIsMoreOpen] = useState(false);
-  const moreContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -25,15 +20,7 @@ export const BottomControls: React.FC<BottomControlsProps> = ({
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (moreContainerRef.current && !moreContainerRef.current.contains(e.target as Node)) {
-        setIsMoreOpen(false);
-      }
-    };
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
+
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -43,10 +30,7 @@ export const BottomControls: React.FC<BottomControlsProps> = ({
     }
   };
 
-  const handleViewSwitch = (view: ViewMode) => {
-    onSwitchView(view);
-    setIsMoreOpen(false);
-  };
+
 
   return (
     <div className="bottom-controls">
@@ -69,33 +53,7 @@ export const BottomControls: React.FC<BottomControlsProps> = ({
             {currentMode === 'minimal' ? 'hide_image' : 'image'}
           </span>
         </button>
-        <div
-          className={`more-container ${isMoreOpen ? 'open' : ''}`}
-          ref={moreContainerRef}
-        >
-          <button
-            className="icon-btn"
-            id="moreBtn"
-            aria-label="更多选项"
-            onClick={() => setIsMoreOpen(!isMoreOpen)}
-          >
-            <span className="material-symbols-rounded">more_vert</span>
-          </button>
-          <div className="morph-panel">
-            <div
-              className={`morph-item ${currentView === 'time' ? 'active' : ''}`}
-              onClick={() => handleViewSwitch('time')}
-            >
-              显示时间
-            </div>
-            <div
-              className={`morph-item ${currentView === 'decibel' ? 'active' : ''}`}
-              onClick={() => handleViewSwitch('decibel')}
-            >
-              分贝仪
-            </div>
-          </div>
-        </div>
+
       </div>
     </div>
   );

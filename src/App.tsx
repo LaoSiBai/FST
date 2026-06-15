@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useClock } from './hooks/useClock';
 import { BackgroundGradient } from './components/BackgroundGradient';
 import { TimeView } from './components/TimeView';
-import { DecibelView } from './components/DecibelView';
 import { BottomControls } from './components/BottomControls';
 
 type ThemeMode = 'default' | 'minimal';
@@ -10,7 +9,6 @@ type ThemeMode = 'default' | 'minimal';
 function App() {
   const { time, totalMinutes } = useClock();
   const [currentMode, setCurrentMode] = useState<ThemeMode>('default');
-  const [currentView, setCurrentView] = useState<'time' | 'decibel'>('time');
 
   const [debugTime, setDebugTime] = useState<number | null>(null);
   const [animatedMinutes, setAnimatedMinutes] = useState<number>(totalMinutes);
@@ -77,17 +75,11 @@ function App() {
     <div className={`w-full h-full relative flex items-center justify-center overflow-hidden ${currentMode}`}>
       <BackgroundGradient minutes={animatedMinutes} mode={currentMode} />
 
-      {currentView === 'time' ? (
-        <TimeView minutes={animatedMinutes} time={displayTime} mode={currentMode} />
-      ) : (
-        <DecibelView isActive={currentView === 'decibel'} />
-      )}
+      <TimeView minutes={animatedMinutes} time={displayTime} mode={currentMode} />
 
       <BottomControls
         currentMode={currentMode}
         onToggleMode={() => setCurrentMode(m => m === 'minimal' ? 'default' : 'minimal')}
-        currentView={currentView}
-        onSwitchView={setCurrentView}
       />
 
       {debugTime !== null && import.meta.env.DEV && (
