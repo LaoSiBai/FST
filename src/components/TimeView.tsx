@@ -1,94 +1,95 @@
 import { useMemo } from 'react';
 import { useQuotes } from '../hooks/useQuotes';
 
+type ThemeMode = 'default' | 'minimal';
+
 interface TimeViewProps {
-    totalMinutes: number;
-    time: Date;
-    mode: string;
+  minutes: number;
+  time: Date;
+  mode: ThemeMode;
 }
 
-export const TimeView: React.FC<TimeViewProps> = ({ totalMinutes, time, mode }) => {
-    const { current, fadeOut } = useQuotes();
+const EXAM_HIDE_START = new Date('2026-07-06T00:00:00+08:00').getTime();
+const EXAM_HIDE_END = new Date('2026-07-10T00:00:00+08:00').getTime();
+const EXAM_TARGET_2027 = new Date('2027-06-07T00:00:00+08:00').getTime();
 
-    const textStyle = useMemo(() => {
-        if (mode === 'minimal') return { color: '#fff', opacity: 1, shadow: 'none', fillGradient: '' };
+export const TimeView: React.FC<TimeViewProps> = ({ minutes, time, mode }) => {
+  const { current, fadeOut } = useQuotes();
 
-        const hour = totalMinutes / 60;
-        if (hour >= 20 && hour < 23) {
-            const progress = (hour - 20) / 3;
-            const glowIntensity = 0.3 + (0.8 - 0.3) * progress;
-            const glowSize = Math.round(20 + (60 - 20) * progress);
-            return {
-                color: '#fff',
-                opacity: 1,
-                shadow: `0 0 ${glowSize}px rgba(255, 240, 200, ${glowIntensity.toFixed(2)}), 0 0 ${glowSize * 2}px rgba(255, 220, 150, ${(glowIntensity * 0.5).toFixed(2)})`,
-                fillGradient: ''
-            };
-        }
-        return { color: '#fff', opacity: 0.6, shadow: 'none', fillGradient: '' };
-    }, [totalMinutes, mode]);
+  const textStyle = useMemo(() => {
+    if (mode === 'minimal') return { color: '#fff', opacity: 1, shadow: 'none' };
 
-    const { countdownDays, isHidden } = useMemo(() => {
-        const timeMs = time.getTime();
-        const hideStart = new Date('2026-07-06T00:00:00+08:00').getTime();
-        const hideEnd = new Date('2026-07-10T00:00:00+08:00').getTime();
-        const target2027 = new Date('2027-06-07T00:00:00+08:00').getTime();
+    const hour = minutes / 60;
+    if (hour >= 20 && hour < 23) {
+      const progress = (hour - 20) / 3;
+      const glowIntensity = 0.3 + (0.8 - 0.3) * progress;
+      const glowSize = Math.round(20 + (60 - 20) * progress);
+      return {
+        color: '#fff',
+        opacity: 1,
+        shadow: `0 0 ${glowSize}px rgba(255, 240, 200, ${glowIntensity.toFixed(2)}), 0 0 ${glowSize * 2}px rgba(255, 220, 150, ${(glowIntensity * 0.5).toFixed(2)})`
+      };
+    }
+    return { color: '#fff', opacity: 0.6, shadow: 'none' };
+  }, [minutes, mode]);
 
-        if (timeMs >= hideStart && timeMs < hideEnd) {
-            return { countdownDays: 0, isHidden: true };
-        }
+  const { countdownDays, isHidden } = useMemo(() => {
+    const timeMs = time.getTime();
 
-        const target = timeMs >= hideEnd ? target2027 : hideStart;
-        const diff = target - timeMs;
-        
-        if (diff <= 0) {
-            return { countdownDays: 0, isHidden: true };
-        }
-        
-        const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-        return { countdownDays: days, isHidden: false };
-    }, [time]);
+    if (timeMs >= EXAM_HIDE_START && timeMs < EXAM_HIDE_END) {
+      return { countdownDays: 0, isHidden: true };
+    }
 
-    const hoursStr = time.getHours().toString().padStart(2, '0');
-    const minutesStr = time.getMinutes().toString().padStart(2, '0');
+    const target = timeMs >= EXAM_HIDE_END ? EXAM_TARGET_2027 : EXAM_HIDE_START;
+    const diff = target - timeMs;
 
-    const clockStyle = mode !== 'minimal' ? {
-        color: textStyle.color,
-        opacity: textStyle.opacity,
-        textShadow: textStyle.shadow,
-        backgroundImage: textStyle.fillGradient || undefined,
-    } : {};
+    if (diff <= 0) {
+      return { countdownDays: 0, isHidden: true };
+    }
 
-    return (
-        <div className="main-container" id="timeViewContainer">
-            <div className="quote-container" id="quoteContainer">
-                {fadeOut && (
-                    <div className="quote-text fade-out" id="quoteText1">
-                        {fadeOut}
-                    </div>
-                )}
-                <div key={current} className="quote-text active" id="quoteText2">
-                    {current}
-                </div>
-            </div>
-            
-            <div className="clock-row-wrapper">
-                <div className="clock" id="clock" style={clockStyle}>
-                    <div className="clock-row" id="clockHours">{hoursStr}</div>
-                    <span className="clock-colon">:</span>
-                    <div className="clock-row" id="clockMinutes">{minutesStr}</div>
-                </div>
-                
-                {!isHidden && (
-                    <div className="countdown-container" id="countdownContainer">
-                        <div className="countdown-label">考试倒计时</div>
-                        <div className="countdown-timer" id="countdownTimer">
-                            <span className="countdown-unit" id="cdDays">{String(countdownDays).padStart(2, '0')}</span>
-                            <span className="countdown-tag">天</span>
-                        </div>
-                    </div>
-                )}
-            </div>
+    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    return { countdownDays: days, isHidden: false };
+  }, [time]);
+
+  const hoursStr = time.getHours().toString().padStart(2, '0');
+  const minutesStr = time.getMinutes().toString().padStart(2, '0');
+
+  const clockStyle = mode !== 'minimal' ? {
+    color: textStyle.color,
+    opacity: textStyle.opacity,
+    textShadow: textStyle.shadow,
+  } : {};
+
+  return (
+    <div className="main-container">
+      <div className="quote-container">
+        {fadeOut && (
+          <div className="quote-text fade-out">
+            {fadeOut}
+          </div>
+        )}
+        <div key={current} className="quote-text active">
+          {current}
         </div>
-    );
+      </div>
+
+      <div className="clock-row-wrapper">
+        <div className="clock" style={clockStyle}>
+          <div className="clock-row">{hoursStr}</div>
+          <span className="clock-colon">:</span>
+          <div className="clock-row">{minutesStr}</div>
+        </div>
+
+        {!isHidden && (
+          <div className="countdown-container">
+            <div className="countdown-label">考试倒计时</div>
+            <div className="countdown-timer">
+              <span className="countdown-unit">{String(countdownDays).padStart(2, '0')}</span>
+              <span className="countdown-tag">天</span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
