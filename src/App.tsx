@@ -13,6 +13,7 @@ function App() {
   const [debugTime, setDebugTime] = useState<number | null>(null);
   const [animatedMinutes, setAnimatedMinutes] = useState<number>(totalMinutes);
   const isExitingDebug = useRef(false);
+  const lastClickTime = useRef(0);
 
   // Sync animatedMinutes when entering/exiting debug mode.
   useEffect(() => {
@@ -71,8 +72,28 @@ function App() {
   displayTime.setHours(Math.floor(animatedMinutes / 60));
   displayTime.setMinutes(Math.floor(animatedMinutes % 60));
 
+  const handlePointerDown = (e: React.PointerEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName.toLowerCase() === 'button' || target.tagName.toLowerCase() === 'input') return;
+
+    const currentTime = Date.now();
+    const timeDiff = currentTime - lastClickTime.current;
+
+    if (timeDiff > 0 && timeDiff < 300) {
+      if (import.meta.env.DEV) {
+        setDebugTime(prev => prev === null ? totalMinutes : null);
+      }
+      lastClickTime.current = 0;
+    } else {
+      lastClickTime.current = currentTime;
+    }
+  };
+
   return (
-    <div className={`w-full h-full relative flex items-center justify-center overflow-hidden ${currentMode}`}>
+    <div 
+      className={`w-full h-full relative flex items-center justify-center overflow-hidden ${currentMode}`}
+      onPointerDown={handlePointerDown}
+    >
       <BackgroundGradient minutes={animatedMinutes} mode={currentMode} />
 
       <TimeView minutes={animatedMinutes} time={displayTime} mode={currentMode} />
