@@ -61,9 +61,7 @@ function App() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'd' || e.key === 'D') {
-        if (import.meta.env.DEV) {
-          setDebugTime(prev => prev === null ? totalMinutes : null);
-        }
+        setDebugTime(prev => prev === null ? totalMinutes : null);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -82,9 +80,7 @@ function App() {
     const timeDiff = currentTime - lastClickTime.current;
 
     if (timeDiff > 0 && timeDiff < 300) {
-      if (import.meta.env.DEV) {
-        setDebugTime(prev => prev === null ? totalMinutes : null);
-      }
+      setDebugTime(prev => prev === null ? totalMinutes : null);
       lastClickTime.current = 0;
     } else {
       lastClickTime.current = currentTime;
@@ -93,7 +89,7 @@ function App() {
 
   return (
     <div 
-      className={`w-full h-full relative flex items-center justify-center overflow-hidden ${currentMode}`}
+      className={`w-full h-full relative flex items-center justify-center overflow-hidden select-none ${currentMode}`}
       onPointerDown={handlePointerDown}
     >
       <BackgroundGradient minutes={animatedMinutes} mode={currentMode} />
@@ -111,7 +107,7 @@ function App() {
         onSwitchView={setCurrentView}
       />
 
-      {debugTime !== null && import.meta.env.DEV && (
+      {debugTime !== null && (
         <div className="debug-panel">
           <label>调试时间</label>
           <input
