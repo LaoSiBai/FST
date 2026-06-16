@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
+import { FullScreen, OffScreen, Pic, PreviewCloseOne, MoreTwo } from '@icon-park/react';
+import '@icon-park/react/styles/index.css';
 
 type ThemeMode = 'default' | 'minimal';
 type ViewMode = 'time' | 'decibel';
@@ -56,18 +58,14 @@ export const BottomControls: React.FC<BottomControlsProps> = ({
           aria-label={isFullscreen ? '关闭全屏' : '打开全屏'}
           onClick={toggleFullscreen}
         >
-          <span className="material-symbols-rounded">
-            {isFullscreen ? 'fullscreen_exit' : 'fullscreen'}
-          </span>
+          {isFullscreen ? <OffScreen theme="outline" size="22" fill="currentColor" strokeWidth={3} /> : <FullScreen theme="outline" size="22" fill="currentColor" strokeWidth={3} />}
         </button>
         <button
           className="icon-btn"
           aria-label={currentMode === 'minimal' ? '打开背景' : '关闭背景'}
           onClick={onToggleMode}
         >
-          <span className="material-symbols-rounded">
-            {currentMode === 'minimal' ? 'hide_image' : 'image'}
-          </span>
+          {currentMode === 'minimal' ? <PreviewCloseOne theme="outline" size="22" fill="currentColor" strokeWidth={3} /> : <Pic theme="outline" size="22" fill="currentColor" strokeWidth={3} />}
         </button>
         <div
           className={`more-container ${isMoreOpen ? 'open' : ''}`}
@@ -79,7 +77,7 @@ export const BottomControls: React.FC<BottomControlsProps> = ({
             aria-label="更多选项"
             onClick={() => setIsMoreOpen(!isMoreOpen)}
           >
-            <span className="material-symbols-rounded">more_vert</span>
+            <MoreTwo theme="outline" size="22" fill="currentColor" strokeWidth={3} />
           </button>
           <div className="morph-panel">
             <div
