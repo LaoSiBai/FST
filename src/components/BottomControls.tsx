@@ -1,6 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { FullScreen, OffScreen, Pic, PreviewCloseOne, MoreTwo } from '@icon-park/react';
-import '@icon-park/react/styles/index.css';
+import {
+  RiFullscreenLine,
+  RiFullscreenExitLine,
+  RiPaletteLine,
+  RiMoonClearLine,
+  RiMore2Line
+} from '@remixicon/react';
 
 type ThemeMode = 'default' | 'minimal';
 type ViewMode = 'time' | 'decibel';
@@ -58,14 +63,14 @@ export const BottomControls: React.FC<BottomControlsProps> = ({
           aria-label={isFullscreen ? '关闭全屏' : '打开全屏'}
           onClick={toggleFullscreen}
         >
-          {isFullscreen ? <OffScreen theme="outline" size="22" fill="currentColor" strokeWidth={3} /> : <FullScreen theme="outline" size="22" fill="currentColor" strokeWidth={3} />}
+          {isFullscreen ? <RiFullscreenExitLine size={24} /> : <RiFullscreenLine size={24} />}
         </button>
         <button
           className="icon-btn"
           aria-label={currentMode === 'minimal' ? '打开背景' : '关闭背景'}
           onClick={onToggleMode}
         >
-          {currentMode === 'minimal' ? <PreviewCloseOne theme="outline" size="22" fill="currentColor" strokeWidth={3} /> : <Pic theme="outline" size="22" fill="currentColor" strokeWidth={3} />}
+          {currentMode === 'minimal' ? <RiMoonClearLine size={24} /> : <RiPaletteLine size={24} />}
         </button>
         <div
           className={`more-container ${isMoreOpen ? 'open' : ''}`}
@@ -77,7 +82,7 @@ export const BottomControls: React.FC<BottomControlsProps> = ({
             aria-label="更多选项"
             onClick={() => setIsMoreOpen(!isMoreOpen)}
           >
-            <MoreTwo theme="outline" size="22" fill="currentColor" strokeWidth={3} />
+            <RiMore2Line size={24} />
           </button>
           <div className="morph-panel">
             <div
