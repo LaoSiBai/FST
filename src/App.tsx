@@ -4,11 +4,13 @@ import { BackgroundGradient } from './components/BackgroundGradient';
 import { TimeView } from './components/TimeView';
 import { DecibelView } from './components/DecibelView';
 import { BottomControls } from './components/BottomControls';
+import { CITIES } from './data/cities';
 
 type ThemeMode = 'default' | 'minimal';
 
 function App() {
-  const { time, totalMinutes } = useClock();
+  const [currentCity, setCurrentCity] = useState(CITIES[4]); // Default to 成都
+  const { time, totalMinutes } = useClock(currentCity.timezoneOffset);
   const [currentMode, setCurrentMode] = useState<ThemeMode>('default');
   const [currentView, setCurrentView] = useState<'time' | 'decibel'>('time');
 
@@ -74,7 +76,7 @@ function App() {
 
   const handlePointerDown = (e: React.PointerEvent) => {
     const target = e.target as HTMLElement;
-    if (target.tagName.toLowerCase() === 'button' || target.tagName.toLowerCase() === 'input') return;
+    if (target.tagName.toLowerCase() === 'button' || target.tagName.toLowerCase() === 'input' || target.tagName.toLowerCase() === 'select') return;
 
     const currentTime = Date.now();
     const timeDiff = currentTime - lastClickTime.current;
@@ -92,7 +94,7 @@ function App() {
       className={`w-full h-full relative flex items-center justify-center overflow-hidden select-none ${currentMode}`}
       onPointerDown={handlePointerDown}
     >
-      <BackgroundGradient minutes={animatedMinutes} mode={currentMode} />
+      <BackgroundGradient minutes={animatedMinutes} mode={currentMode} city={currentCity} />
 
       {currentView === 'time' ? (
         <TimeView minutes={animatedMinutes} time={displayTime} mode={currentMode} />
@@ -105,6 +107,8 @@ function App() {
         onToggleMode={() => setCurrentMode(m => m === 'minimal' ? 'default' : 'minimal')}
         currentView={currentView}
         onSwitchView={setCurrentView}
+        currentCity={currentCity}
+        onCityChange={setCurrentCity}
       />
 
       {debugTime !== null && (

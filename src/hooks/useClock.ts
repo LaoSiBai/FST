@@ -1,23 +1,21 @@
 import { useState, useEffect } from 'react';
 
-const SHANGHAI_OFFSET = 8 * 60; // UTC+8
-
-function getShanghaiTime(): Date {
+function getCityTime(offsetHours: number): Date {
   const now = new Date();
   const utc = now.getTime() + now.getTimezoneOffset() * 60000;
-  return new Date(utc + SHANGHAI_OFFSET * 60000);
+  return new Date(utc + offsetHours * 60 * 60000);
 }
 
-export function useClock() {
-  const [time, setTime] = useState(getShanghaiTime);
+export function useClock(timezoneOffset: number = 8) {
+  const [time, setTime] = useState(() => getCityTime(timezoneOffset));
   const [totalMinutes, setTotalMinutes] = useState<number>(() => {
-    const t = getShanghaiTime();
+    const t = getCityTime(timezoneOffset);
     return t.getHours() * 60 + t.getMinutes();
   });
 
   useEffect(() => {
     const updateTime = () => {
-      const now = getShanghaiTime();
+      const now = getCityTime(timezoneOffset);
       setTime(now);
       setTotalMinutes(now.getHours() * 60 + now.getMinutes());
     };
@@ -25,7 +23,7 @@ export function useClock() {
     updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [timezoneOffset]);
 
   return { time, totalMinutes };
 }
