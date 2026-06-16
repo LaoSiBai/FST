@@ -498,14 +498,14 @@
       text-align: center;
   }
 
-  /* 同步深色背景（极简模式）下的玻璃 UI 质感 */
+  /* 深色背景（极简模式）：纯黑背景下 backdrop-filter 无效，改用半透明实底 */
   .minimal .icon-btn::before,
   .minimal .morph-panel,
   .minimal .debug-panel {
-      background: rgba(255, 255, 255, 0.12);
-      backdrop-filter: blur(12px) brightness(1.2);
-      -webkit-backdrop-filter: blur(12px) brightness(1.2);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
   }
 }
 
