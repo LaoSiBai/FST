@@ -159,114 +159,186 @@ export function interpolateSkyState(alpha: number) {
     return skyStops[0];
 }
 
-// ─── 天气系统 ────────────────────────────────────────────
+// ─── 天气系统（基于大气物理光学重构）────────────────────────
 
 export type WeatherType = 'clear' | 'overcast' | 'thunderstorm' | 'sandstorm' | 'haze';
 
 export interface WeatherPreset {
     name: string;
     emoji: string;
-    // 对 OklchColor 的修正参数
-    saturationScale: number;   // 饱和度缩放因子 (1 = 不变, 0 = 完全去饱和)
-    lightnessOffset: number;   // 明度偏移 (正值提亮, 负值压暗)
-    hueShift: number;          // 色相偏移角度
-    // 雾层叠加
-    fogColor: OklchColor;      // 雾层颜色
-    fogOpacity: number;        // 雾层不透明度 (0 = 无雾, 1 = 完全覆盖)
 }
 
 export const weatherPresets: Record<WeatherType, WeatherPreset> = {
-    clear: {
-        name: '晴天',
-        emoji: '☀️',
-        saturationScale: 1,
-        lightnessOffset: 0,
-        hueShift: 0,
-        fogColor: { l: 0, c: 0, h: 0 },
-        fogOpacity: 0,
-    },
-    overcast: {
-        name: '阴天',
-        emoji: '☁️',
-        // 米氏散射均匀打散所有波段 → 灰白色 + 微蓝偏移
-        saturationScale: 0.2,
-        lightnessOffset: 0.08,
-        hueShift: 10,           // 向蓝色微偏
-        fogColor: { l: 0.65, c: 0.015, h: 250 },
-        fogOpacity: 0.5,
-    },
-    thunderstorm: {
-        name: '雷暴',
-        emoji: '⛈️',
-        // 超厚云层蓝光散射 + 低角度暖光 = 诡异绿色
-        saturationScale: 0.6,
-        lightnessOffset: -0.2,
-        hueShift: 80,           // 大幅偏向绿色
-        fogColor: { l: 0.25, c: 0.05, h: 160 },
-        fogOpacity: 0.55,
-    },
-    sandstorm: {
-        name: '沙尘',
-        emoji: '🏜️',
-        // 铁氧化物颗粒滤除蓝光，只剩红橙光
-        saturationScale: 0.7,
-        lightnessOffset: -0.05,
-        hueShift: -60,          // 向暖黄/橙色大幅偏移
-        fogColor: { l: 0.45, c: 0.1, h: 55 },
-        fogOpacity: 0.65,
-    },
-    haze: {
-        name: '雾霾',
-        emoji: '🌫️',
-        // 气溶胶均匀米氏散射 → 灰白光幕稀释蓝色
-        saturationScale: 0.15,
-        lightnessOffset: 0.12,
-        hueShift: 0,
-        fogColor: { l: 0.7, c: 0.005, h: 90 },
-        fogOpacity: 0.55,
-    },
+    clear:        { name: '晴天', emoji: '☀️' },
+    overcast:     { name: '阴天', emoji: '☁️' },
+    thunderstorm: { name: '雷暴', emoji: '⛈️' },
+    sandstorm:    { name: '沙尘', emoji: '🏜️' },
+    haze:         { name: '雾霾', emoji: '🌫️' },
 };
 
 /**
- * 将天气修正参数叠加到基础晴天颜色上
+ * 米氏散射雾层混合
+ * 模拟大气中气溶胶/水滴对所有波段的无选择性散射
+ * 雾层颜色为高明度、极低饱和度的灰白色（符合米氏散射波长无关性）
  */
-function applyWeatherToColor(color: OklchColor, weather: WeatherPreset): OklchColor {
-    // 1. 调整饱和度
-    let c = color.c * weather.saturationScale;
-    // 2. 调整明度
-    let l = Math.max(0, Math.min(1, color.l + weather.lightnessOffset));
-    // 3. 色相偏移
-    let h = color.h + weather.hueShift;
-    // 标准化色相
-    while (h > 360) h -= 360;
-    while (h < 0) h += 360;
+function applyMieFog(color: OklchColor, fogColor: OklchColor, intensity: number): OklchColor {
+    return {
+        l: lerp(color.l, fogColor.l, intensity),
+        c: lerp(color.c, fogColor.c, intensity),
+        h: lerpHue(color.h, fogColor.h, intensity),
+    };
+}
 
-    // 4. 与雾层颜色混合
-    if (weather.fogOpacity > 0) {
-        const fog = weather.fogColor;
-        const t = weather.fogOpacity;
-        l = lerp(l, fog.l, t);
-        c = lerp(c, fog.c, t);
-        h = lerpHue(h, fog.h, t);
+/**
+ * 光谱滤除效应
+ * 模拟大颗粒物（如沙尘中的铁氧化物）对短波长光的强烈散射消耗
+ * 物理原理：蓝光被滤除，仅剩红橙光穿透
+ */
+function applySpectralFilter(color: OklchColor, filterHue: number, filterStrength: number): OklchColor {
+    // 将色相强制向滤镜色相拉拽（模拟短波光被剥离后，长波光主导天空）
+    const h = lerpHue(color.h, filterHue, filterStrength);
+    // 饱和度向中等值靠拢（沙尘天空有明显暖色但非极度鲜艳）
+    const c = lerp(color.c, 0.08, filterStrength * 0.6);
+    return { l: color.l, c, h };
+}
+
+/**
+ * 阴天 — 基于米氏散射的物理模型
+ *
+ * 物理原理：云层中液态水滴远大于可见光波长，产生波长无关的米氏散射。
+ * 所有可见光被均匀打散 → 白灰色光幕。
+ * 厚云层的多次散射会放大水滴对特定光谱的微弱选择性吸收 → 极微蓝偏移。
+ * 
+ * 天顶和地平线的差异被抹平（整片天空趋向均匀灰白）。
+ */
+function applyOvercast(sky: { zenith: OklchColor; horizon: OklchColor; haze: OklchColor }) {
+    // 阴天雾层：高明度、极低饱和度、微偏蓝（h≈250 符合水滴多次散射蓝偏移）
+    const fogColor: OklchColor = { l: 0.58, c: 0.012, h: 250 };
+    const fogIntensity = 0.7; // 厚云覆盖
+
+    return {
+        zenith:  applyMieFog(sky.zenith, fogColor, fogIntensity),
+        horizon: applyMieFog(sky.horizon, { ...fogColor, l: fogColor.l + 0.05 }, fogIntensity * 0.85),
+        haze:    applyMieFog(sky.haze, { ...fogColor, l: fogColor.l + 0.08 }, fogIntensity * 0.75),
+    };
+}
+
+/**
+ * 雷暴 — 基于超级单体光学叠加的物理模型
+ * 
+ * 物理原理：强对流超级单体云极厚（可达12英里），内部密集水滴和冰雹
+ * 主要散射蓝光。当太阳处于低角度（黄金时刻），暖色阳光照亮蓝色云体，
+ * 蓝+金黄 在人眼中叠加感知为绿色。
+ * 
+ * 关键点：绿色天空是太阳高度角依赖的！
+ * - 太阳高角度（正午）→ 不会出现绿色，只是极暗的铅灰蓝色
+ * - 太阳低角度（傍晚）→ 暖光+蓝光散射 = 诡异绿色
+ * - 夜晚 → 近乎纯黑，被厚云完全遮蔽
+ */
+function applyThunderstorm(
+    sky: { zenith: OklchColor; horizon: OklchColor; haze: OklchColor },
+    solarElevation: number
+) {
+    // 基础：极厚云层压暗一切，强烈去饱和
+    const darkFog: OklchColor = { l: 0.22, c: 0.025, h: 260 };
+    const darkIntensity = 0.75;
+
+    const darkened = {
+        zenith:  applyMieFog(sky.zenith, darkFog, darkIntensity),
+        horizon: applyMieFog(sky.horizon, { ...darkFog, l: darkFog.l + 0.06 }, darkIntensity * 0.85),
+        haze:    applyMieFog(sky.haze, { ...darkFog, l: darkFog.l + 0.1 }, darkIntensity * 0.7),
+    };
+
+    // 绿色偏移：仅在太阳低角度时（0°~25°之间）逐渐显现
+    // 这模拟了暖色阳光照亮蓝色散射云体的光学叠加
+    let greenMix = 0;
+    if (solarElevation > 0 && solarElevation < 25) {
+        // 在 5°~15° 之间达到最大绿色效果（黄金时刻末尾）
+        greenMix = Math.sin(Math.min(solarElevation / 15, 1) * Math.PI) * 0.6;
     }
 
-    return { l, c, h };
+    if (greenMix > 0) {
+        // 蓝光散射体 + 暖光 → 视觉感知绿色（色相约 155-170）
+        const greenTint: OklchColor = { l: 0.3, c: 0.045, h: 160 };
+        return {
+            zenith:  applyMieFog(darkened.zenith, greenTint, greenMix * 0.5),
+            horizon: applyMieFog(darkened.horizon, greenTint, greenMix * 0.8),
+            haze:    applyMieFog(darkened.haze, greenTint, greenMix),
+        };
+    }
+
+    return darkened;
+}
+
+/**
+ * 沙尘暴 — 基于铁氧化物颗粒光谱滤除的物理模型
+ *
+ * 物理原理：大量富含铁氧化物的沙漠尘土悬浮在大气中，
+ * 形成巨大的天然滤镜。蓝光和紫光被大颗粒的米氏散射消耗殆尽，
+ * 仅剩红光和橙光能穿透尘埃层。
+ * 
+ * 整个天空被暖黄/橙色的浓密雾层吞噬，天顶蓝色完全消失。
+ */
+function applySandstorm(sky: { zenith: OklchColor; horizon: OklchColor; haze: OklchColor }) {
+    // 沙尘雾层：中低明度、中等饱和的暖黄橙色（铁氧化物反射色）
+    const dustFog: OklchColor = { l: 0.42, c: 0.085, h: 60 };
+    const dustIntensity = 0.8; // 极浓密的沙尘覆盖
+
+    // 先用光谱滤镜把天顶蓝色彻底滤除
+    const filtered = {
+        zenith:  applySpectralFilter(sky.zenith, 55, 0.85),
+        horizon: applySpectralFilter(sky.horizon, 50, 0.7),
+        haze:    applySpectralFilter(sky.haze, 45, 0.6),
+    };
+
+    // 再叠加浓密的沙尘雾层
+    return {
+        zenith:  applyMieFog(filtered.zenith, dustFog, dustIntensity),
+        horizon: applyMieFog(filtered.horizon, { ...dustFog, l: dustFog.l + 0.06 }, dustIntensity * 0.9),
+        haze:    applyMieFog(filtered.haze, { ...dustFog, l: dustFog.l + 0.1 }, dustIntensity * 0.85),
+    };
+}
+
+/**
+ * 城市雾霾 — 基于气溶胶均匀米氏散射的物理模型
+ *
+ * 物理原理：大量细小的工业污染气溶胶悬浮于大气底层。
+ * 米氏散射对波长不敏感 → 所有波段被均匀散射到观察者眼中 → 白灰色光幕。
+ * 该光幕极大地稀释了瑞利散射产生的纯净蓝色。
+ * 天空呈现灰蒙蒙的低饱和度青白色。
+ * 
+ * 关键：雾霾不改变色相，只是用白灰色去稀释一切。
+ */
+function applyHaze(sky: { zenith: OklchColor; horizon: OklchColor; haze: OklchColor }) {
+    // 雾霾层：高明度、几乎无饱和度的灰白色（纯粹的米氏均匀散射）
+    const hazeFog: OklchColor = { l: 0.68, c: 0.006, h: 90 };
+    const hazeIntensity = 0.6;
+
+    return {
+        // 天顶受影响最大（底层气溶胶对仰望方向的散射积分最长）
+        zenith:  applyMieFog(sky.zenith, hazeFog, hazeIntensity),
+        // 地平线方向本就有较多米氏散射，雾霾进一步加强
+        horizon: applyMieFog(sky.horizon, { ...hazeFog, l: hazeFog.l + 0.05 }, hazeIntensity * 0.85),
+        haze:    applyMieFog(sky.haze, { ...hazeFog, l: hazeFog.l + 0.08 }, hazeIntensity * 0.75),
+    };
 }
 
 /**
  * 对整个天空状态应用天气修正
+ * @param solarElevation 太阳高度角（度），用于雷暴的时段依赖绿色效果
  */
 export function applyWeather(
     skyState: { zenith: OklchColor; horizon: OklchColor; haze: OklchColor },
-    weatherType: WeatherType
+    weatherType: WeatherType,
+    solarElevation: number = 45
 ) {
-    const preset = weatherPresets[weatherType];
-    if (weatherType === 'clear') return skyState;
-
-    return {
-        zenith: applyWeatherToColor(skyState.zenith, preset),
-        horizon: applyWeatherToColor(skyState.horizon, preset),
-        haze: applyWeatherToColor(skyState.haze, preset),
-    };
+    switch (weatherType) {
+        case 'clear':        return skyState;
+        case 'overcast':     return applyOvercast(skyState);
+        case 'thunderstorm': return applyThunderstorm(skyState, solarElevation);
+        case 'sandstorm':    return applySandstorm(skyState);
+        case 'haze':         return applyHaze(skyState);
+        default:             return skyState;
+    }
 }
 

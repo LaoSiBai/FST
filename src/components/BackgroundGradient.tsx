@@ -19,8 +19,8 @@ export const BackgroundGradient: React.FC<BackgroundGradientProps> = ({ minutes,
     const alpha = getSolarElevation(hour, city.latitude, city.longitude, dayOfYear, city.timezoneOffset);
     const baseSkyState = interpolateSkyState(alpha);
 
-    // 叠加天气修正
-    const skyState = applyWeather(baseSkyState, weather);
+    // 叠加天气修正（传入太阳高度角，供雷暴等时段依赖效果使用）
+    const skyState = applyWeather(baseSkyState, weather, alpha);
 
     const hazeColor = formatOklch(skyState.haze, 1);
     const hazeFade = formatOklch(skyState.haze, 0); 
