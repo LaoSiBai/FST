@@ -7,6 +7,13 @@ import { BottomControls } from './components/BottomControls';
 import { CITIES } from './data/cities';
 import { weatherPresets } from './utils/skyPhysics';
 import type { WeatherType } from './utils/skyPhysics';
+import {
+  RiSunLine,
+  RiCloudyLine,
+  RiThunderstormsLine,
+  RiTornadoLine,
+  RiHaze2Line,
+} from '@remixicon/react';
 
 type ThemeMode = 'default' | 'minimal';
 
@@ -53,7 +60,7 @@ function App() {
           isExitingDebug.current = false;
           return totalMinutes;
         }
-        return prev + diff * 0.015;
+        return prev + diff * 0.065;
       });
 
       if (isExitingDebug.current) {
@@ -128,7 +135,13 @@ function App() {
                   onClick={() => setDebugWeather(key)}
                   title={weatherPresets[key].name}
                 >
-                  {weatherPresets[key].emoji}
+                  {{
+                    clear: <RiSunLine size={16} />,
+                    overcast: <RiCloudyLine size={16} />,
+                    thunderstorm: <RiThunderstormsLine size={16} />,
+                    sandstorm: <RiTornadoLine size={16} />,
+                    haze: <RiHaze2Line size={16} />,
+                  }[key]}
                 </button>
               ))}
             </div>
