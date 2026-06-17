@@ -5,8 +5,12 @@ import { TimeView } from './components/TimeView';
 import { DecibelView } from './components/DecibelView';
 import { BottomControls } from './components/BottomControls';
 import { CITIES } from './data/cities';
+import { weatherPresets } from './utils/skyPhysics';
+import type { WeatherType } from './utils/skyPhysics';
 
 type ThemeMode = 'default' | 'minimal';
+
+const WEATHER_KEYS: WeatherType[] = ['clear', 'overcast', 'thunderstorm', 'sandstorm', 'haze'];
 
 function App() {
   const [currentCity, setCurrentCity] = useState(CITIES[4]); // Default to 成都
@@ -15,6 +19,7 @@ function App() {
   const [currentView, setCurrentView] = useState<'time' | 'decibel'>('time');
 
   const [debugTime, setDebugTime] = useState<number | null>(null);
+  const [debugWeather, setDebugWeather] = useState<WeatherType>('clear');
   const [animatedMinutes, setAnimatedMinutes] = useState<number>(totalMinutes);
   const isExitingDebug = useRef(false);
   const lastClickTime = useRef(0);
@@ -94,7 +99,7 @@ function App() {
       className={`w-full h-full relative flex items-center justify-center overflow-hidden select-none ${currentMode}`}
       onPointerDown={handlePointerDown}
     >
-      <BackgroundGradient minutes={animatedMinutes} mode={currentMode} city={currentCity} />
+      <BackgroundGradient minutes={animatedMinutes} mode={currentMode} city={currentCity} weather={debugWeather} />
 
       {currentView === 'time' ? (
         <TimeView minutes={animatedMinutes} time={displayTime} mode={currentMode} />
@@ -112,18 +117,35 @@ function App() {
       />
 
       {debugTime !== null && (
-        <div className="debug-panel">
-          <label>调试时间</label>
-          <input
-            type="range"
-            min="0" max="1439"
-            value={debugTime}
-            onChange={e => setDebugTime(Number(e.target.value))}
-          />
-          <span className="time-display">
-            {String(Math.floor(debugTime / 60)).padStart(2, '0')}:
-            {String(Math.floor(debugTime % 60)).padStart(2, '0')}
-          </span>
+        <div className="debug-area">
+          <div className="debug-panel">
+            <label>天气</label>
+            <div className="weather-btns">
+              {WEATHER_KEYS.map(key => (
+                <button
+                  key={key}
+                  className={`weather-btn ${debugWeather === key ? 'active' : ''}`}
+                  onClick={() => setDebugWeather(key)}
+                  title={weatherPresets[key].name}
+                >
+                  {weatherPresets[key].emoji}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="debug-panel">
+            <label>时间</label>
+            <input
+              type="range"
+              min="0" max="1439"
+              value={debugTime}
+              onChange={e => setDebugTime(Number(e.target.value))}
+            />
+            <span className="time-display">
+              {String(Math.floor(debugTime / 60)).padStart(2, '0')}:
+              {String(Math.floor(debugTime % 60)).padStart(2, '0')}
+            </span>
+          </div>
         </div>
       )}
     </div>
@@ -131,3 +153,4 @@ function App() {
 }
 
 export default App;
+

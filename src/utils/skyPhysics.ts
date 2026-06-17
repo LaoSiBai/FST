@@ -158,3 +158,115 @@ export function interpolateSkyState(alpha: number) {
     }
     return skyStops[0];
 }
+
+// ─── 天气系统 ────────────────────────────────────────────
+
+export type WeatherType = 'clear' | 'overcast' | 'thunderstorm' | 'sandstorm' | 'haze';
+
+export interface WeatherPreset {
+    name: string;
+    emoji: string;
+    // 对 OklchColor 的修正参数
+    saturationScale: number;   // 饱和度缩放因子 (1 = 不变, 0 = 完全去饱和)
+    lightnessOffset: number;   // 明度偏移 (正值提亮, 负值压暗)
+    hueShift: number;          // 色相偏移角度
+    // 雾层叠加
+    fogColor: OklchColor;      // 雾层颜色
+    fogOpacity: number;        // 雾层不透明度 (0 = 无雾, 1 = 完全覆盖)
+}
+
+export const weatherPresets: Record<WeatherType, WeatherPreset> = {
+    clear: {
+        name: '晴天',
+        emoji: '☀️',
+        saturationScale: 1,
+        lightnessOffset: 0,
+        hueShift: 0,
+        fogColor: { l: 0, c: 0, h: 0 },
+        fogOpacity: 0,
+    },
+    overcast: {
+        name: '阴天',
+        emoji: '☁️',
+        // 米氏散射均匀打散所有波段 → 灰白色 + 微蓝偏移
+        saturationScale: 0.2,
+        lightnessOffset: 0.08,
+        hueShift: 10,           // 向蓝色微偏
+        fogColor: { l: 0.65, c: 0.015, h: 250 },
+        fogOpacity: 0.5,
+    },
+    thunderstorm: {
+        name: '雷暴',
+        emoji: '⛈️',
+        // 超厚云层蓝光散射 + 低角度暖光 = 诡异绿色
+        saturationScale: 0.6,
+        lightnessOffset: -0.2,
+        hueShift: 80,           // 大幅偏向绿色
+        fogColor: { l: 0.25, c: 0.05, h: 160 },
+        fogOpacity: 0.55,
+    },
+    sandstorm: {
+        name: '沙尘',
+        emoji: '🏜️',
+        // 铁氧化物颗粒滤除蓝光，只剩红橙光
+        saturationScale: 0.7,
+        lightnessOffset: -0.05,
+        hueShift: -60,          // 向暖黄/橙色大幅偏移
+        fogColor: { l: 0.45, c: 0.1, h: 55 },
+        fogOpacity: 0.65,
+    },
+    haze: {
+        name: '雾霾',
+        emoji: '🌫️',
+        // 气溶胶均匀米氏散射 → 灰白光幕稀释蓝色
+        saturationScale: 0.15,
+        lightnessOffset: 0.12,
+        hueShift: 0,
+        fogColor: { l: 0.7, c: 0.005, h: 90 },
+        fogOpacity: 0.55,
+    },
+};
+
+/**
+ * 将天气修正参数叠加到基础晴天颜色上
+ */
+function applyWeatherToColor(color: OklchColor, weather: WeatherPreset): OklchColor {
+    // 1. 调整饱和度
+    let c = color.c * weather.saturationScale;
+    // 2. 调整明度
+    let l = Math.max(0, Math.min(1, color.l + weather.lightnessOffset));
+    // 3. 色相偏移
+    let h = color.h + weather.hueShift;
+    // 标准化色相
+    while (h > 360) h -= 360;
+    while (h < 0) h += 360;
+
+    // 4. 与雾层颜色混合
+    if (weather.fogOpacity > 0) {
+        const fog = weather.fogColor;
+        const t = weather.fogOpacity;
+        l = lerp(l, fog.l, t);
+        c = lerp(c, fog.c, t);
+        h = lerpHue(h, fog.h, t);
+    }
+
+    return { l, c, h };
+}
+
+/**
+ * 对整个天空状态应用天气修正
+ */
+export function applyWeather(
+    skyState: { zenith: OklchColor; horizon: OklchColor; haze: OklchColor },
+    weatherType: WeatherType
+) {
+    const preset = weatherPresets[weatherType];
+    if (weatherType === 'clear') return skyState;
+
+    return {
+        zenith: applyWeatherToColor(skyState.zenith, preset),
+        horizon: applyWeatherToColor(skyState.horizon, preset),
+        haze: applyWeatherToColor(skyState.haze, preset),
+    };
+}
+
